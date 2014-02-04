@@ -5,6 +5,6 @@ Version: 0.1
 Date: 2014-01-21
 Author: Abiel Reinhart <abielr@gmail.com>
 Maintainer: Abiel Reinhart <abielr@gmail.com>
-Depends: xts, RCurl
+Depends: xts, RCurl, XML, lubridate, rjson
 Description: Fetch data from public sources
 License: MIT
