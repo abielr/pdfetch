@@ -16,3 +16,4 @@ TODO:
 * http://data.un.org/Host.aspx?Content=API
 * http://www.stat-search.boj.or.jp/index_en.html
 * BLS
+* EIA

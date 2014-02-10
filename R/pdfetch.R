@@ -3,7 +3,7 @@
 #' @param identifiers a list of FRED series IDs
 #' @param col.names an optional list of column names. If not supplied, the 
 #' @return an xts object with all the series merged together
-fetch_FRED <- function(identifiers, col.names) {
+pdfetch_FRED <- function(identifiers, col.names) {
   if (missing(col.names))
     col.names <- identifiers
   else if (length(identifiers) != length(col.names))
@@ -25,7 +25,7 @@ fetch_FRED <- function(identifiers, col.names) {
 }
 
 #' Fetch data from European Central Bank's statistical data warehouse
-fetch_ECB <- function(identifiers, col.names) {
+pdfetch_ECB <- function(identifiers, col.names) {
   if (missing(col.names))
     col.names <- identifiers
   else if (length(identifiers) != length(col.names))
@@ -47,7 +47,7 @@ fetch_ECB <- function(identifiers, col.names) {
 }
 
 #' Fetch data from Eurostat
-fetch_EUROSTAT <- function(flowRef, key, startPeriod, endPeriod, col.names) {
+pdfetch_EUROSTAT <- function(flowRef, key, startPeriod, endPeriod, col.names) {
   if (!missing(startPeriod) && !missing(endPeriod))
     url <- paste0("http://ec.europa.eu/eurostat/SDMX/diss-web/rest/data/",flowRef,"/",key,"/?startPeriod=",startPeriod,"&endPeriod=",endPeriod)
   else if (!missing(startPeriod))
@@ -87,3 +87,25 @@ fetch_EUROSTAT <- function(flowRef, key, startPeriod, endPeriod, col.names) {
   
   do.call(merge.xts, results)
 }
+
+#' Fetch data from World Bank
+pdfetch_WB <- function(indicators, countries="all", col.names) {
+  countries <- paste(countries, collapse=";")
+  indicators <- paste(indicators, collapse=";")
+  
+  query <- paste0("http://api.worldbank.org/countries/",countries,"/indicators/",indicators,"?format=json&per_page=1000")
+  x <- fromJSON(getURL(query))[[2]]
+  results <- data.frame(indicator=paste(x$indicator$id, x$country$id, sep="."),
+                  value=as.numeric(x$value),
+                  date=as.Date(ISOdate(as.numeric(x$date), 12, 31))) # This dating won't always work, need to detect frequency
+  results <- dcast(results, date ~ indicator)
+  results <- xts(subset(results, select=-date), results$date)
+  results
+}
+
+x <- pdfetch_WB("NY.GDP.MKTP.CD", c("br","ca"))
+
+getURL("http://data.ons.gov.uk/ons/api/data/concepts.xml?apikey=shufTniwRu&context=Census")
+x <-fromJSON(getURL("http://api.worldbank.org/countries/br/indicators/NY.GDP.MKTP.CD?format=json&per_page=1000"))[[2]]
+
+x <- data.frame(a=1:3, b=c(2,3,NA))
