@@ -1,17 +1,18 @@
 Package: pdfetch
-Type: Package
-Title: Fetch data from public sources
-Version: 0.1
-Date: 2014-01-21
-Author: Abiel Reinhart <abielr@gmail.com>
-Maintainer: Abiel Reinhart <abielr@gmail.com>
-Depends:
+Imports:
+    zoo,
     xts,
     RCurl,
     XML,
     lubridate,
     jsonlite,
     reshape2
+Type: Package
+Title: Fetch data from public sources
+Version: 0.1
+Date: 2014-02-21
+Author: Abiel Reinhart <abielr@gmail.com>
+Maintainer: Abiel Reinhart <abielr@gmail.com>
 Description: A package for downloading economic and financial time series from
     public sources.
 License: GPL
