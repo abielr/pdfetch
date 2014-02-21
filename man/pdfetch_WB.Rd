@@ -1,0 +1,23 @@
+\name{pdfetch_WB}
+\alias{pdfetch_WB}
+\title{Fetch data from World Bank}
+\usage{
+pdfetch_WB(indicators, countries = "all")
+}
+\arguments{
+  \item{indicators}{a vector of World Bank indicators}
+
+  \item{countries}{a vector of countrie identifiers, which
+  can be 2- or 3-character ISO codes. The special option
+  "all" retrieves all countries.}
+}
+\value{
+a xts object
+}
+\description{
+Fetch data from World Bank
+}
+\examples{
+pdfetch_WB("NY.GDP.MKTP.CD", c("BR","MX"))
+}
+

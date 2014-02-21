@@ -1,0 +1,33 @@
+\name{pdfetch_EUROSTAT}
+\alias{pdfetch_EUROSTAT}
+\title{Fetch data from Eurostat}
+\usage{
+pdfetch_EUROSTAT(flowRef, from, to, ...)
+}
+\arguments{
+  \item{flowRef}{Eurostat dataset code}
+
+  \item{from}{a Date object or string in YYYY-MM-DD format.
+  If supplied, only data on or after this date will be
+  returned}
+
+  \item{to}{a Date object or string in YYYY-MM-DD format.
+  If supplied, only data on or before this date will be
+  returned}
+
+  \item{...}{optional dimension filters for the dataset}
+}
+\value{
+a xts object
+}
+\description{
+Eurostat stores its statistics in data cubes, which can be
+browsed at
+\url{http://epp.eurostat.ec.europa.eu/portal/page/portal/statistics/search_database}.
+To access data, specify the name of a data cube and
+optionally filter it based on its dimensions.
+}
+\examples{
+pdfetch_EUROSTAT("namq_gdp_c", FREQ="Q", S_ADJ="SWDA", UNIT="MIO_EUR", INDIC_NA="B1GM", GEO=c("DE","UK"))
+}
+
