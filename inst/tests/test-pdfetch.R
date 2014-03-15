@@ -16,14 +16,19 @@ test_that("test ECB", {
 })
 
 test_that("test Eurostat", {
-  x <- pdfetch_EUROSTAT_DSD("namq_gdp_c")
-  x <- pdfetch_EUROSTAT_DSD("cdh_e_fos")
-  x <- pdfetch_EUROSTAT_DSD("irt_euryld_d")
-  x <- pdfetch_EUROSTAT("cdh_e_fos", FREQ="A", Y_GRAD="TOTAL", FOS07=c("FOS1"))
+  pdfetch_EUROSTAT_DSD("namq_gdp_c")
+  pdfetch_EUROSTAT_DSD("cdh_e_fos")
+  pdfetch_EUROSTAT_DSD("irt_euryld_d")
+  x <- pdfetch_EUROSTAT("cdh_e_fos", FREQ="A", Y_GRAD="TOTAL", FOS07=c("FOS1","FOS2"))
   x <- pdfetch_EUROSTAT("namq_gdp_c", FREQ="Q", S_ADJ="SWDA", UNIT="MIO_EUR", INDIC_NA="B1GM", GEO=c("DE","UK"))
-  x <- pdfetch_EUROSTAT("irt_euryld_d", startPeriod=as.Date("2014-01-15"), MATURITY="Y1", FREQ="W", CURV_TYP="YCSR_RT")
+  x <- pdfetch_EUROSTAT("irt_euryld_d", startPeriod=as.Date("2014-01-15"), MATURITY="Y1", FREQ="D", CURV_TYP="YCSR_RT")
+
 })
 
 test_that("test World Bank", {
   x <- pdfetch_WB("NY.GDP.MKTP.CD", c("BR","MX"))
+})
+
+test_that("test Bank of England", {
+  x <- pdfetch_BOE(c("LPMVWYR", "LPMVWYR"), "2012-01-01")
 })

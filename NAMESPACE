@@ -1,3 +1,4 @@
+export(pdfetch_BOE)
 export(pdfetch_ECB)
 export(pdfetch_EUROSTAT)
 export(pdfetch_EUROSTAT_DSD)

@@ -36,7 +36,7 @@ pdfetch_YAHOO <- function(identifiers,
                          "&f=", year(to),
                          "&d=", month(to)-1,
                          "&e=", day(to)
-                         ), destfile=tmp, quiet=T)
+    ), destfile=tmp, quiet=T)
     fr <- read.csv(tmp, header=T)
     unlink(tmp)
     x <- xts(fr[,match(fields, valid.fields)+1], as.Date(fr[, 1]))
@@ -65,8 +65,9 @@ pdfetch_FRED <- function(identifiers) {
   results <- list()
   for (i in 1:length(identifiers)) {
     
+    url <- paste0("http://research.stlouisfed.org/fred2/series/",identifiers[i],"/downloaddata/",identifiers[i],".txt")
     tmp <- tempfile()
-    download.file(paste0("http://research.stlouisfed.org/fred2/series/",identifiers[i],"/downloaddata/",identifiers[i],".txt"), destfile=tmp, quiet=T) 
+    download.file(url, destfile=tmp, quiet=T)
     fileLines <- readLines(tmp)
     freq <- sub(",", "", strsplit(fileLines[6], " +")[[1]][2])
     skip <- grep("DATE", fileLines)[1]
@@ -103,10 +104,8 @@ pdfetch_FRED <- function(identifiers) {
 pdfetch_ECB <- function(identifiers) {
   results <- list()
   for (i in 1:length(identifiers)) {
-    tmp <- tempfile()
-    download.file(paste0("http://sdw.ecb.europa.eu/quickviewexport.do?SERIES_KEY=",identifiers[i],"&type=csv"), destfile=tmp, quiet=T) 
-    fr <- read.csv(tmp, header=F, stringsAsFactors=F)[-c(1:5),]
-    unlink(tmp)
+    tmp <- getURL(paste0("http://sdw.ecb.europa.eu/quickviewexport.do?SERIES_KEY=",identifiers[i],"&type=csv"))
+    fr <- read.csv(textConnection(tmp), header=F, stringsAsFactors=F)[-c(1:5),]
     
     if (inherits(fr, "character"))
       stop(paste0("Series ", identifiers[i], " not found"))
@@ -141,10 +140,7 @@ pdfetch_ECB <- function(identifiers) {
 # Download Eurostat DSD file
 pdfetch_EUROSTAT_GETDSD <- function(flowRef) {
   url <- paste0("http://ec.europa.eu/eurostat/SDMX/diss-web/rest/datastructure/ESTAT/DSD_", flowRef)
-  tmp <- tempfile()
-  download.file(url, destfile=tmp, quiet=T, method="curl")
-  doc <- xmlInternalTreeParse(tmp)
-  unlink(tmp)
+  doc <- xmlInternalTreeParse(getURL(url, useragent="RCurl"))
   
   doc
 }
@@ -215,10 +211,7 @@ pdfetch_EUROSTAT <- function(flowRef, from, to, ...) {
   else
     url <- paste0("http://ec.europa.eu/eurostat/SDMX/diss-web/rest/data/",flowRef,"/",key)
   
-  tmp <- tempfile()
-  download.file(url, destfile=tmp, quiet=T, method="curl")
-  doc <- xmlInternalTreeParse(tmp)
-  unlink(tmp)
+  doc <- xmlInternalTreeParse(getURL(url, useragent="RCurl"))
   
   results <- list()
   seriesSet <- getNodeSet(doc, "//generic:Series")
@@ -240,6 +233,7 @@ pdfetch_EUROSTAT <- function(flowRef, from, to, ...) {
     
     if (freq == "A") {
       dates <- as.Date(ISOdate(as.numeric(unlist(getNodeSet(series, ".//generic:ObsDimension/@value", "generic"))),12,31))
+    
     } else if (freq == "Q") {
       dates <- as.Date(as.yearqtr(
         sapply(
@@ -266,7 +260,7 @@ pdfetch_EUROSTAT <- function(flowRef, from, to, ...) {
     results[[i]] <- x
   }
   
-  na.omit(do.call(merge.xts, results), is.na="all")
+  na.trim(do.call(merge.xts, results), is.na="all")
 }
 
 #' Fetch data from World Bank
@@ -294,7 +288,38 @@ pdfetch_WB <- function(indicators, countries="all") {
                   value=as.numeric(x$value),
                   date=as.Date(ISOdate(as.numeric(x$date), 12, 31))) # This dating won't always work, need to detect frequency
   results <- dcast(results, date ~ indicator)
-  results <- na.omit(xts(subset(results, select=-date), results$date), is.na="all")
+  results <- na.trim(xts(subset(results, select=-date), results$date), is.na="all")
   results
+}
+
+#' Fetch data from the Bank of England Interactive Statistical Database
+#' 
+#' @param identifiers a vector of BoE series codes
+#' @param from start date
+#' @param to end date; if not given, today's date will be used
+#' @return a xts object
+#' @export
+#' @examples
+#' pdfetch_BOE(c("LPMVWYR", "LPMVWYR"), "2012-01-01")
+pdfetch_BOE <- function(identifiers, from, to=Sys.Date()) {
+  if (length(identifiers) > 300)
+    stop("At most 300 series can be downloaded at once")
+  
+  from <- as.Date(from)
+  to <- as.Date(to)
+  
+  url <- paste0("http://www.bankofengland.co.uk/boeapps/iadb/fromshowcolumns.asp?csv.x=yes",
+                "&SeriesCodes=",paste(identifiers, collapse=","),
+                "&CSVF=TN&VPD=Y&UsingCodes=Y",
+                "&Datefrom=", format(from, "%d/%b/%Y"),
+                "&Dateto=", format(to, "%d/%b/%Y"))
+  
+  tmp <- tempfile()
+  download.file(url, destfile=tmp, quiet=T)
+  fr <- read.csv(tmp, header=T)
+  unlink(tmp)
+  
+  dates <- as.Date(fr[,1], "%d %b %Y")
+  xts(fr[,-1], dates)
 }
 

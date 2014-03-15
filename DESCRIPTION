@@ -8,9 +8,9 @@ Imports:
     jsonlite,
     reshape2
 Type: Package
-Title: Fetch data from public sources
-Version: 0.1
-Date: 2014-02-21
+Title: Fetch economic and financial time series data from public sources
+Version: 0.1.2
+Date: 2014-03-15
 Author: Abiel Reinhart <abielr@gmail.com>
 Maintainer: Abiel Reinhart <abielr@gmail.com>
 Description: A package for downloading economic and financial time series from
