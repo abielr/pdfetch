@@ -198,7 +198,8 @@ pdfetch_EUROSTAT_DSD <- function(flowRef) {
 #' @return a xts object
 #' @export
 #' @examples
-#' tryCatch(pdfetch_EUROSTAT("namq_gdp_c", FREQ="Q", S_ADJ="SWDA", UNIT="MIO_EUR", INDIC_NA="B1GM", GEO=c("DE","UK")),
+#' tryCatch(pdfetch_EUROSTAT("namq_gdp_c", FREQ="Q", S_ADJ="SWDA", UNIT="MIO_EUR", 
+#'                           INDIC_NA="B1GM", GEO=c("DE","UK")),
 #'          error = function(e) {},
 #'          warning = function(w) {}
 #' )
