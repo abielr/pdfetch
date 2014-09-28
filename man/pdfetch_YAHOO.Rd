@@ -26,7 +26,12 @@ a xts object
 Fetch data from Yahoo Finance
 }
 \examples{
-pdfetch_YAHOO(c("^gspc","^ixic"))
-pdfetch_YAHOO(c("^gspc","^ixic"), "adjclose")
+tryCatch({
+   pdfetch_YAHOO(c("^gspc","^ixic"))
+   pdfetch_YAHOO(c("^gspc","^ixic"), "adjclose")
+   },
+   error = function(e) {},
+   warning = function(w) {}
+)
 }
 

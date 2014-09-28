@@ -14,6 +14,9 @@ a xts object
 Fetch data from St Louis Fed's FRED database
 }
 \examples{
-pdfetch_FRED(c("GDPC1", "PCECC96"))
+tryCatch(pdfetch_FRED(c("GDPC1", "PCECC96")),
+         error = function(e) {},
+         warning = function(w) {}
+)
 }
 

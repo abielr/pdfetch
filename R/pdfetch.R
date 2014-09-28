@@ -7,8 +7,13 @@
 #' @return a xts object
 #' @export
 #' @examples
-#' pdfetch_YAHOO(c("^gspc","^ixic"))
-#' pdfetch_YAHOO(c("^gspc","^ixic"), "adjclose")
+#' tryCatch({
+#'    pdfetch_YAHOO(c("^gspc","^ixic"))
+#'    pdfetch_YAHOO(c("^gspc","^ixic"), "adjclose")
+#'    },
+#'    error = function(e) {},
+#'    warning = function(w) {}
+#' )
 pdfetch_YAHOO <- function(identifiers, 
                           fields=c("open","high","low","close","volume","adjclose"),
                           from=as.Date("2007-01-01"),
@@ -60,7 +65,10 @@ pdfetch_YAHOO <- function(identifiers,
 #' @return a xts object
 #' @export
 #' @examples
-#' pdfetch_FRED(c("GDPC1", "PCECC96"))
+#' tryCatch(pdfetch_FRED(c("GDPC1", "PCECC96")),
+#'          error = function(e) {},
+#'          warning = function(w) {}
+#' )
 pdfetch_FRED <- function(identifiers) {  
   results <- list()
   for (i in 1:length(identifiers)) {
@@ -100,11 +108,15 @@ pdfetch_FRED <- function(identifiers) {
 #' @return a xts object
 #' @export
 #' @examples
-#' pdfetch_ECB("FM.B.U2.EUR.4F.KR.DFR.CHG")
+#' tryCatch(pdfetch_ECB("FM.B.U2.EUR.4F.KR.DFR.CHG"),
+#'          error = function(e) {},
+#'          warning = function(w) {}
+#' )
 pdfetch_ECB <- function(identifiers) {
   results <- list()
   for (i in 1:length(identifiers)) {
-    tmp <- getURL(paste0("http://sdw.ecb.europa.eu/quickviewexport.do?SERIES_KEY=",identifiers[i],"&type=csv"))
+    req <- GET(paste0("http://sdw.ecb.europa.eu/quickviewexport.do?SERIES_KEY=",identifiers[i],"&type=csv"))
+    tmp <- content(req, as="text")
     fr <- read.csv(textConnection(tmp), header=F, stringsAsFactors=F)[-c(1:5),]
     
     if (inherits(fr, "character"))
@@ -121,7 +133,7 @@ pdfetch_ECB <- function(identifiers) {
     } else if (freq == "Q") {
       dates <- quarter_end(as.Date(as.yearqtr(fr[,1])))
     } else if (freq == "M") {
-      dates <- month_end(as.Date(as.yearmon(fr[,1])))
+      dates <- month_end(as.Date(as.yearmon(fr[,1], "%Y%b")))
     } else if (freq == "B" || freq == "D") {
       dates <- as.Date(fr[,1])
     } else {
@@ -140,7 +152,8 @@ pdfetch_ECB <- function(identifiers) {
 # Download Eurostat DSD file
 pdfetch_EUROSTAT_GETDSD <- function(flowRef) {
   url <- paste0("http://ec.europa.eu/eurostat/SDMX/diss-web/rest/datastructure/ESTAT/DSD_", flowRef)
-  doc <- xmlInternalTreeParse(getURL(url, useragent="RCurl"))
+  req <- GET(url, add_headers(useragent="RCurl"))
+  doc <- xmlInternalTreeParse(content(req, as="text"))
   
   doc
 }
@@ -149,7 +162,10 @@ pdfetch_EUROSTAT_GETDSD <- function(flowRef) {
 #' @param flowRef Eurostat dataset code
 #' @export
 #' @examples
-#' pdfetch_EUROSTAT_DSD("namq_gdp_c")
+#' tryCatch(pdfetch_EUROSTAT_DSD("namq_gdp_c"),
+#'          error = function(e) {},
+#'          warning = function(w) {}
+#' )
 pdfetch_EUROSTAT_DSD <- function(flowRef) {
   doc <- pdfetch_EUROSTAT_GETDSD(flowRef)
   concepts <- setdiff(unlist(getNodeSet(doc, "//str:Dimension/@id")), c("OBS_VALUE","OBS_STATUS","OBS_FLAG"))
@@ -182,8 +198,10 @@ pdfetch_EUROSTAT_DSD <- function(flowRef) {
 #' @return a xts object
 #' @export
 #' @examples
-#' pdfetch_EUROSTAT("namq_gdp_c", FREQ="Q", S_ADJ="SWDA", UNIT="MIO_EUR", INDIC_NA="B1GM",
-#'  GEO=c("DE","UK"))
+#' tryCatch(pdfetch_EUROSTAT("namq_gdp_c", FREQ="Q", S_ADJ="SWDA", UNIT="MIO_EUR", INDIC_NA="B1GM", GEO=c("DE","UK")),
+#'          error = function(e) {},
+#'          warning = function(w) {}
+#' )
 pdfetch_EUROSTAT <- function(flowRef, from, to, ...) {
   arguments <- list(...)
   doc <- pdfetch_EUROSTAT_GETDSD(flowRef)
@@ -211,7 +229,8 @@ pdfetch_EUROSTAT <- function(flowRef, from, to, ...) {
   else
     url <- paste0("http://ec.europa.eu/eurostat/SDMX/diss-web/rest/data/",flowRef,"/",key)
   
-  doc <- xmlInternalTreeParse(getURL(url, useragent="RCurl"))
+  req <- GET(url, add_headers(useragent="RCurl"))
+  doc <- xmlInternalTreeParse(content(req, as="text"))
   
   results <- list()
   seriesSet <- getNodeSet(doc, "//generic:Series")
@@ -244,7 +263,7 @@ pdfetch_EUROSTAT <- function(flowRef, from, to, ...) {
       dates <- quarter_end(dates)
     } else if (freq == "M") {
       dates <- as.Date(as.yearmon(unlist(getNodeSet(series, ".//generic:ObsDimension/@value", "generic")), format="%Y-%m"))
-      day(dates) <- month_end(dates)
+      dates <- month_end(dates)
     } else if (freq == "D") {
       dates <- as.Date(unlist(getNodeSet(series, ".//generic:ObsDimension/@value", "generic")))
     } else {
@@ -271,13 +290,17 @@ pdfetch_EUROSTAT <- function(flowRef, from, to, ...) {
 #' @return a xts object
 #' @export
 #' @examples
-#' pdfetch_WB("NY.GDP.MKTP.CD", c("BR","MX"))
+#' tryCatch(pdfetch_WB("NY.GDP.MKTP.CD", c("BR","MX")),
+#'          error = function(e) {},
+#'          warning = function(w) {}
+#' )
 pdfetch_WB <- function(indicators, countries="all") {
   countries <- paste(countries, collapse=";")
   indicators <- paste(indicators, collapse=";")
   
   query <- paste0("http://api.worldbank.org/countries/",countries,"/indicators/",indicators,"?format=json&per_page=1000")
-  x <- fromJSON(getURL(query))[[2]]
+  req <- GET(query)
+  x <- fromJSON(content(req, as="text"))[[2]]
   
   if (!inherits(x, "data.frame")) {
     warning("No series found")
@@ -300,7 +323,10 @@ pdfetch_WB <- function(indicators, countries="all") {
 #' @return a xts object
 #' @export
 #' @examples
-#' pdfetch_BOE(c("LPMVWYR", "LPMVWYR"), "2012-01-01")
+#' tryCatch(pdfetch_BOE(c("LPMVWYR", "LPMVWYR"), "2012-01-01"),
+#'          error = function(e) {},
+#'          warning = function(w) {}
+#' )
 pdfetch_BOE <- function(identifiers, from, to=Sys.Date()) {
   if (length(identifiers) > 300)
     stop("At most 300 series can be downloaded at once")
@@ -323,3 +349,273 @@ pdfetch_BOE <- function(identifiers, from, to=Sys.Date()) {
   xts(fr[,-1], dates)
 }
 
+#' Fetch data from U.S. Bureau of Labor Statistics
+#' 
+#' @param identifiers a vector of BLS time series IDs
+#' @param from start year
+#' @param to end year. Note that the request will fail if this is a future year
+#'   that is beyond the last available data point in the series.
+#' @return a xts object
+#' @export
+#' @examples
+#' tryCatch(pdfetch_BLS(c("EIUIR","EIUIR100"), 2005, 2010),
+#'          error = function(e) {},
+#'          warning = function(w) {}
+#' )
+pdfetch_BLS <- function(identifiers, from, to) {
+  if (!is.numeric(from) || !is.numeric(to))
+    stop("Both from and to must be integers")
+  
+  if (to < from)
+    stop("to must be greater than or equal to from")
+  
+  years <- seq(from, to, by=10)
+  if (years[length(years)] != to || length(years) == 1)
+    years <- c(years, to)
+  
+  results <- list()
+  for (id in identifiers)
+    results[[id]] <- NA
+  
+  for (i in 2:length(years)) {
+    from <- years[i-1]+1
+    to <- years[i]
+    if (i == 2)
+      from <- years[i-1]
+    
+    req <- list(seriesid=identifiers, startyear=unbox(from), endyear=unbox(to))
+    resp <- POST("http://api.bls.gov/publicAPI/v1/timeseries/data/", body=req, encode="json")
+    resp <- fromJSON(content(resp, as="text"))
+    
+    if (resp$status != "REQUEST_SUCCEEDED")
+      stop("Request failed")
+    
+    series <- resp$Results$series
+    for (j in 1:length(identifiers)) {
+      seriesID <- series$seriesID[j]
+      if (length(series$data[[j]]) > 0)
+        results[[seriesID]] <- rbind(results[[seriesID]], series$data[[j]])
+    }
+  }
+  
+  ix <- sapply(results, function(x) inherits(x, "data.frame"))
+  
+  if (!all(ix))
+    warning(paste("No data found for series", identifiers[!ix], "in specified time range"))
+  
+  if (all(!ix))
+    return(NULL)
+  
+  results <- results[ix]
+  
+  for (id in names(results)) {
+    dat <- subset(results[[id]], period != 'M13')
+    freq <- substr(dat$period[1], 1, 1)
+    periods <- as.numeric(substr(dat$period, 2, 3))
+    years <- as.numeric(dat$year)
+    
+    if (freq == "M")
+      dates <- as.Date(ISOdate(years, periods, 1))
+    else if (freq == "Q")
+      dates <- as.Date(ISOdate(years, periods*3, 1))
+    else if (freq == "A")
+      dates <- as.Date(ISOdate(years, 12, 31))
+    else
+      stop(paste("Unrecognized frequency", freq))
+    
+    dates <- month_end(dates)
+    
+    results[[id]] <- xts(as.numeric(dat$value), dates)
+    colnames(results[[id]]) <- id
+  }
+  
+  identifiers <- identifiers[identifiers %in% names(results)]
+  na.trim(do.call(merge.xts, results), is.na="all")[, identifiers]
+}
+
+#' Fetch data from the French National Institute of Statistics and Economic Studies (INSEE)
+#' 
+#' @param identifiers a vector of INSEE series codes
+#' @return a xts object
+#' @export
+#' @examples
+#' tryCatch(pdfetch_INSEE(c("000810635")),
+#'    error = function(e) {},
+#'    warning = function(w) {}
+#' )
+pdfetch_INSEE <- function(identifiers) {
+  results <- list()
+  
+  for (id in identifiers) {
+    url <- paste0("http://www.bdm.insee.fr/bdm2/affichageSeries.action?idbank=",id)
+    page <- tryCatch({
+      req <- GET(url, add_headers("Accept-Language"="en-US,en;q=0.8"))
+      content(req, as="text")
+    }, warning = function(w) {
+      
+    })
+    
+    if (!is.null(page)) {
+      doc <- htmlParse(page)
+      dat <- readHTMLTable(doc)[[1]]
+      
+      if (names(dat)[2] == "Month") {
+        year <- as.numeric(as.character(dat[,1]))
+        month <- as.character(dat[,2])
+        dates <- as.Date(paste(year, month, 1), format="%Y %b %d")
+      } else if (names(dat[2]) == "Quarter") {
+        year <- as.numeric(as.character(dat[,1]))
+        month <- as.numeric(as.character(dat[,2]))*3
+        dates <- as.Date(ISOdate(year, month, 1))
+      } else if (ncol(dat) == 2) {
+        year <- as.numeric(as.character(dat[,1]))
+        dates <- as.Date(ISOdate(year, 12, 31))
+      } else {
+        stop("Unrecognized frequency")
+      }
+      
+      values <- as.numeric(gsub("[^0-9]", "", dat[,ncol(dat)]))
+      dates <- month_end(dates)
+      
+      x <- xts(values, dates)
+      colnames(x) <- id
+      results[[id]] <- x 
+    } else {
+      warning(paste("Series", id, "not found"))
+    }
+  }
+  
+  if (length(results) == 0)
+    return(NULL)
+  
+  na.trim(do.call(merge.xts, results), is.na="all")
+}
+
+#' Fetch data from the UK Office of National Statistics
+#' @param identifiers a vector of ONS series codes
+#' @param dataset ONS dataset name
+#' @return a xts object
+#' @export
+#' @examples
+#' tryCatch(pdfetch_ONS(c("LF24","LF2G"), "lms"),
+#'          error = function(e) {},
+#'          warning = function(w) {}
+#' )
+pdfetch_ONS <- function(identifiers, dataset) {
+  identifiers <- toupper(identifiers)
+  dataset <- tolower(dataset)
+  
+  results <- list()
+  
+  for (id in identifiers) {
+    url <- paste0("http://www.ons.gov.uk/ons/datasets-and-tables/downloads/csv.csv?dataset=",
+                  dataset,"&cdid=",id)
+    
+    tmp <- tempfile()
+    retval <- tryCatch({ 
+      download.file(url, destfile=tmp, quiet=T)
+    }, warning = function(w) {
+      warning(paste("Unable to download series",id,"from dataset",dataset))
+      unlink(tmp)
+      w
+    }, error = function(e) {
+      print(e)
+      unlink(tmp)
+      e
+    })
+    
+    if (inherits(retval, "warning") || inherits(retval, "error"))
+      next
+    
+    fr <- read.csv(tmp, header=T, stringsAsFactors=F)
+    fr <- fr[2:(which(fr[,1]=='\xa9 Crown Copyright')-1),]
+    fr[,2] <- as.numeric(fr[,2])
+    
+    unlink(tmp)
+    
+    datesA <- grep("^[0-9]{4}$", fr[,1])
+    datesQ <- grep("^[0-9]{4} Q[1-4]$", fr[,1])
+    datesM <- grep("^[0-9]{4} [A-Z]{3}$", fr[,1])
+    
+    dates <- NULL
+    if (length(datesM) > 0) {
+      dates <- as.Date(paste(fr[datesM,1],1), "%Y %b %d")
+      dateix <- datesM
+    } else if (length(datesQ) > 0) {
+      y <- as.numeric(substr(fr[datesQ,1], 1, 4))
+      m <- as.numeric(substr(fr[datesQ,1], 7, 7))*3
+      dates <- as.Date(ISOdate(y, m, 1))
+      dateix <- datesQ
+    } else if (length(datesA) > 0) {
+      dates <- as.Date(ISOdate(as.numeric(fr[datesA,1]), 12, 31))
+      dateix <- datesA
+    }
+    
+    if (!is.null(dates)) {
+      dates <- month_end(dates)
+      x <- xts(fr[dateix,2], dates)
+      colnames(x) <- id
+      results[[id]] <- x
+    }
+  }
+
+  if (length(results) == 0)
+    return(NULL)
+  
+  na.trim(do.call(merge.xts, results), is.na="all")
+}
+
+#' Fetch data from the US Energy Information Administration
+#' @param identifiers a vector of EIA series codes
+#' @param api_key EIA API key
+#' @return a xts object
+#' @export
+#' @examples
+#' tryCatch(pdfetch_EIA(c("ELEC.GEN.ALL-AK-99.A","ELEC.GEN.ALL-AK-99.Q"), EIA_KEY),
+#'          error = function(e) {},
+#'          warning = function(w) {}
+#' )
+pdfetch_EIA <- function(identifiers, api_key) {
+  results <- list()
+  
+  for (i in 1:length(identifiers)) {
+    id <- identifiers[i]
+    url <- paste0("http://api.eia.gov/series/?series_id=",id,"&api_key=",api_key)
+    req <- GET(url)
+    res <- fromJSON(content(req, as="text"))
+    
+    if (is.null(res$request)) {
+      warning(paste("Invalid series code",id))
+      next
+    }
+    
+    freq <- res$series$f
+    dates <- unlist(lapply(res$series$data[[1]], function(x) x[1]))
+    data <- as.numeric(unlist(lapply(res$series$data[[1]], function(x) x[2])))
+    
+    if (freq == "A") {
+      dates <- as.Date(ISOdate(as.numeric(dates), 12, 31))
+    } else if (freq == "Q") {
+      y <- as.numeric(substr(dates, 1, 4))
+      m <- 3*as.numeric(substr(dates, 6, 6))
+      dates <- month_end(as.Date(ISOdate(y,m,1)))
+    } else if (freq == "M") {
+      y <- as.numeric(substr(dates, 1, 4))
+      m <- as.numeric(substr(dates, 5, 6))
+      dates <- month_end(as.Date(ISOdate(y,m,1)))
+    } else if (freq == "W" || freq == "D") {
+      dates <- as.Date(dates, "%Y%m%d")
+    } else {
+      warning(paste("Unrecognized frequency",freq,"for series",id))
+    }
+    
+    x <- xts(rev(data), rev(dates))
+    colnames(x) <- id
+    results[[i]] <- x
+  }
+  
+  if (length(results) == 0)
+    return(NULL)
+  
+  na.trim(do.call(merge.xts, results), is.na="all")
+}
