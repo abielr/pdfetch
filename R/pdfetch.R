@@ -33,17 +33,15 @@ pdfetch_YAHOO <- function(identifiers,
   
   results <- list()
   for (i in 1:length(identifiers)) {
-    tmp <- tempfile()
-    download.file(paste0("http://chart.yahoo.com/table.csv?s=",identifiers[i],
+    url <- paste0("http://chart.yahoo.com/table.csv?s=",identifiers[i],
                          "&c=", year(from),
                          "&a=", month(from)-1,
                          "&b=", day(from),
                          "&f=", year(to),
                          "&d=", month(to)-1,
-                         "&e=", day(to)
-    ), destfile=tmp, quiet=T)
-    fr <- read.csv(tmp, header=T)
-    unlink(tmp)
+                         "&e=", day(to))
+    req <- GET(url)
+    fr <- content(req)
     x <- xts(fr[,match(fields, valid.fields)+1], as.Date(fr[, 1]))
     dim(x) <- c(nrow(x),ncol(x))
     if (length(fields)==1)
@@ -73,14 +71,12 @@ pdfetch_FRED <- function(identifiers) {
   results <- list()
   for (i in 1:length(identifiers)) {
     
-    url <- paste0("http://research.stlouisfed.org/fred2/series/",identifiers[i],"/downloaddata/",identifiers[i],".txt")
-    tmp <- tempfile()
-    download.file(url, destfile=tmp, quiet=T)
-    fileLines <- readLines(tmp)
+    url <- paste0("https://research.stlouisfed.org/fred2/series/",identifiers[i],"/downloaddata/",identifiers[i],".txt")
+    req <- GET(url)
+    fileLines <- readLines(textConnection(content(req)))
     freq <- sub(",", "", strsplit(fileLines[6], " +")[[1]][2])
     skip <- grep("DATE", fileLines)[1]
-    fr <- read.fwf(tmp, skip=skip, widths=c(10,20), na.strings=".", colClasses=c("character","numeric"))
-    unlink(tmp)
+    fr <- utils::read.fwf(textConnection(content(req)), skip=skip, widths=c(10,20), na.strings=".", colClasses=c("character","numeric"))
     
     dates <- as.Date(fr[,1], origin="1970-01-01")
 
@@ -93,7 +89,8 @@ pdfetch_FRED <- function(identifiers) {
     else if (freq == "Monthly")
       dates <- month_end(dates)
     
-    x <- xts(as.matrix(fr[,2]), dates)
+    ix <- !is.na(dates)
+    x <- xts(as.matrix(fr[ix,2]), dates[ix])
     dim(x) <- c(nrow(x),1)
     colnames(x) <- identifiers[i]
     results[[identifiers[i]]] <- x
@@ -117,7 +114,7 @@ pdfetch_ECB <- function(identifiers) {
   for (i in 1:length(identifiers)) {
     req <- GET(paste0("http://sdw.ecb.europa.eu/quickviewexport.do?SERIES_KEY=",identifiers[i],"&type=csv"))
     tmp <- content(req, as="text")
-    fr <- read.csv(textConnection(tmp), header=F, stringsAsFactors=F)[-c(1:5),]
+    fr <- utils::read.csv(textConnection(tmp), header=F, stringsAsFactors=F)[-c(1:5),]
     
     if (inherits(fr, "character"))
       stop(paste0("Series ", identifiers[i], " not found"))
@@ -342,8 +339,8 @@ pdfetch_BOE <- function(identifiers, from, to=Sys.Date()) {
                 "&Dateto=", format(to, "%d/%b/%Y"))
   
   tmp <- tempfile()
-  download.file(url, destfile=tmp, quiet=T)
-  fr <- read.csv(tmp, header=T)
+  utils::download.file(url, destfile=tmp, quiet=T)
+  fr <- utils::read.csv(tmp, header=T)
   unlink(tmp)
   
   dates <- as.Date(fr[,1], "%d %b %Y")
@@ -514,7 +511,7 @@ pdfetch_ONS <- function(identifiers, dataset) {
     
     tmp <- tempfile()
     retval <- tryCatch({ 
-      download.file(url, destfile=tmp, quiet=T)
+      utils::download.file(url, destfile=tmp, quiet=T)
     }, warning = function(w) {
       warning(paste("Unable to download series",id,"from dataset",dataset))
       unlink(tmp)
@@ -528,7 +525,7 @@ pdfetch_ONS <- function(identifiers, dataset) {
     if (inherits(retval, "warning") || inherits(retval, "error"))
       next
     
-    fr <- read.csv(tmp, header=T, stringsAsFactors=F)
+    fr <- utils::read.csv(tmp, header=T, stringsAsFactors=F)
     fr <- fr[2:(which(fr[,1]=='\xa9 Crown Copyright')-1),]
     fr[,2] <- as.numeric(fr[,2])
     
