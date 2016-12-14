@@ -41,8 +41,8 @@ pdfetch_YAHOO <- function(identifiers,
                          "&d=", month(to)-1,
                          "&e=", day(to))
     req <- GET(url)
-    fr <- content(req)
-    x <- xts(fr[,match(fields, valid.fields)+1], as.Date(fr[, 1]))
+    fr <- content(req, encoding="utf-8", col_types=readr::cols())
+    x <- xts(fr[,match(fields, valid.fields)+1], as.Date(fr[[1]]))
     dim(x) <- c(nrow(x),ncol(x))
     if (length(fields)==1)
       colnames(x) <- identifiers[i]
@@ -73,10 +73,10 @@ pdfetch_FRED <- function(identifiers) {
     
     url <- paste0("https://research.stlouisfed.org/fred2/series/",identifiers[i],"/downloaddata/",identifiers[i],".txt")
     req <- GET(url)
-    fileLines <- readLines(textConnection(content(req)))
+    fileLines <- readLines(textConnection(content(req, encoding="utf-8")))
     freq <- sub(",", "", strsplit(fileLines[6], " +")[[1]][2])
     skip <- grep("DATE", fileLines)[1]
-    fr <- utils::read.fwf(textConnection(content(req)), skip=skip, widths=c(10,20), na.strings=".", colClasses=c("character","numeric"))
+    fr <- utils::read.fwf(textConnection(content(req, encoding="utf-8")), skip=skip, widths=c(10,20), na.strings=".", colClasses=c("character","numeric"))
     
     dates <- as.Date(fr[,1], origin="1970-01-01")
 
@@ -113,7 +113,7 @@ pdfetch_ECB <- function(identifiers) {
   results <- list()
   for (i in 1:length(identifiers)) {
     req <- GET(paste0("http://sdw.ecb.europa.eu/quickviewexport.do?SERIES_KEY=",identifiers[i],"&type=csv"))
-    tmp <- content(req, as="text")
+    tmp <- content(req, as="text", encoding="utf-8")
     fr <- utils::read.csv(textConnection(tmp), header=F, stringsAsFactors=F)[-c(1:5),]
     
     if (inherits(fr, "character"))
@@ -228,7 +228,7 @@ pdfetch_EUROSTAT <- function(flowRef, from, to, ...) {
     url <- paste0("http://ec.europa.eu/eurostat/SDMX/diss-web/rest/data/",flowRef,"/",key)
   
   req <- GET(url, add_headers(useragent="RCurl"))
-  doc <- xmlInternalTreeParse(content(req, as="text"))
+  doc <- xmlInternalTreeParse(content(req, as="text", encoding="utf-8"))
   
   results <- list()
   seriesSet <- getNodeSet(doc, "//generic:Series")
@@ -383,7 +383,7 @@ pdfetch_BLS <- function(identifiers, from, to) {
     
     req <- list(seriesid=identifiers, startyear=unbox(from), endyear=unbox(to))
     resp <- POST("http://api.bls.gov/publicAPI/v1/timeseries/data/", body=req, encode="json")
-    resp <- fromJSON(content(resp, as="text"))
+    resp <- fromJSON(content(resp, as="text", encoding="utf-8"))
     
     if (resp$status != "REQUEST_SUCCEEDED")
       stop("Request failed")
@@ -456,6 +456,8 @@ pdfetch_INSEE <- function(identifiers) {
     if (!is.null(page)) {
       doc <- htmlParse(page)
       dat <- readHTMLTable(doc)[[1]]
+      names(dat) <- c(as.character(dat[1,1]), as.character(dat[1,2]), as.character(dat[1,3]))
+      dat <- utils::tail(dat, -1)
       
       if (names(dat)[2] == "Month") {
         year <- as.numeric(as.character(dat[,1]))
@@ -491,7 +493,7 @@ pdfetch_INSEE <- function(identifiers) {
 
 #' Fetch data from the UK Office of National Statistics
 #' @param identifiers a vector of ONS series codes
-#' @param dataset ONS dataset name
+#' @param dataset optional ONS dataset name, only used if a time series is available in multiple datasets.
 #' @return a xts object
 #' @export
 #' @examples
@@ -500,59 +502,66 @@ pdfetch_INSEE <- function(identifiers) {
 #'          warning = function(w) {}
 #' )
 pdfetch_ONS <- function(identifiers, dataset) {
-  identifiers <- toupper(identifiers)
-  dataset <- tolower(dataset)
+  identifiers <- tolower(identifiers)
   
   results <- list()
   
   for (id in identifiers) {
-    url <- paste0("http://www.ons.gov.uk/ons/datasets-and-tables/downloads/csv.csv?dataset=",
-                  dataset,"&cdid=",id)
+    url <- paste0("http://www.ons.gov.uk/search?q=",id)
+    resp <- GET(url)
+    ret_url <- resp$url
     
-    tmp <- tempfile()
-    retval <- tryCatch({ 
-      utils::download.file(url, destfile=tmp, quiet=T)
-    }, warning = function(w) {
-      warning(paste("Unable to download series",id,"from dataset",dataset))
-      unlink(tmp)
-      w
-    }, error = function(e) {
-      print(e)
-      unlink(tmp)
-      e
-    })
+    if (ret_url==url) {
+      warning(paste0("Could not find series '", id, "' in ONS time series database"))
+      next()
+    }
     
-    if (inherits(retval, "warning") || inherits(retval, "error"))
-      next
+    url <- paste0("https://www.ons.gov.uk/generator?format=csv&uri=/", parse_url(ret_url)$path)
     
-    fr <- utils::read.csv(tmp, header=T, stringsAsFactors=F)
-    fr <- fr[2:(which(fr[,1]=='\xa9 Crown Copyright')-1),]
-    fr[,2] <- as.numeric(fr[,2])
+    default_dataset <- utils::tail(stringr::str_split(url, "/")[[1]],1)
     
-    unlink(tmp)
+    alternate_nodes <- xml2::xml_attr(xml2::xml_find_all(content(resp), "//div[@id='othertimeseries']//a"), "href")
+    alternate_urls <- list()
+    for (alt_url in alternate_nodes) {
+      dataset_name <- utils::tail(stringr::str_split(alt_url, "/")[[1]], 1)
+      alternate_urls[[dataset_name]] <- alt_url
+    }
     
-    datesA <- grep("^[0-9]{4}$", fr[,1])
-    datesQ <- grep("^[0-9]{4} Q[1-4]$", fr[,1])
-    datesM <- grep("^[0-9]{4} [A-Z]{3}$", fr[,1])
+    if (!missing(dataset)) {
+      dataset <- tolower(dataset)
+      if (dataset!=default_dataset) {
+        if (dataset %in% names(alternate_urls)) {
+          url <- paste0("https://www.ons.gov.uk/generator?format=csv&uri=", alternate_urls[[dataset_name]])
+        } else {
+          warning(paste0("Series '", id, "' not found in dataset '", dataset, "'. Using default dataset '", default_dataset, "' instead."))
+        }
+      }
+    }
+
+    fr <- content(GET(url), col_types=readr::cols())
+    
+    datesA <- grep("^[0-9]{4}$", fr[[1]])
+    datesQ <- grep("^[0-9]{4} Q[1-4]$", fr[[1]])
+    datesM <- grep("^[0-9]{4} [A-Z]{3}$", fr[[1]])
     
     dates <- NULL
     if (length(datesM) > 0) {
-      dates <- as.Date(paste(fr[datesM,1],1), "%Y %b %d")
+      dates <- as.Date(paste(fr[[1]][datesM],1), "%Y %b %d")
       dateix <- datesM
     } else if (length(datesQ) > 0) {
-      y <- as.numeric(substr(fr[datesQ,1], 1, 4))
-      m <- as.numeric(substr(fr[datesQ,1], 7, 7))*3
+      y <- as.numeric(substr(fr[[1]][datesQ], 1, 4))
+      m <- as.numeric(substr(fr[[1]][datesQ], 7, 7))*3
       dates <- as.Date(ISOdate(y, m, 1))
       dateix <- datesQ
     } else if (length(datesA) > 0) {
-      dates <- as.Date(ISOdate(as.numeric(fr[datesA,1]), 12, 31))
+      dates <- as.Date(ISOdate(as.numeric(fr[[1]][datesA]), 12, 31))
       dateix <- datesA
     }
     
     if (!is.null(dates)) {
       dates <- month_end(dates)
-      x <- xts(fr[dateix,2], dates)
-      colnames(x) <- id
+      x <- xts(as.numeric(fr[[2]][dateix]), dates)
+      colnames(x) <- toupper(id)
       results[[id]] <- x
     }
   }
@@ -580,7 +589,7 @@ pdfetch_EIA <- function(identifiers, api_key) {
     id <- identifiers[i]
     url <- paste0("http://api.eia.gov/series/?series_id=",id,"&api_key=",api_key)
     req <- GET(url)
-    res <- fromJSON(content(req, as="text"))
+    res <- fromJSON(content(req, as="text", encoding="utf-8"))
     
     if (is.null(res$request)) {
       warning(paste("Invalid series code",id))
@@ -588,8 +597,8 @@ pdfetch_EIA <- function(identifiers, api_key) {
     }
     
     freq <- res$series$f
-    dates <- unlist(lapply(res$series$data[[1]], function(x) x[1]))
-    data <- as.numeric(unlist(lapply(res$series$data[[1]], function(x) x[2])))
+    dates <- res$series$data[[1]][,1]
+    data <- as.numeric(res$series$data[[1]][,2])
     
     if (freq == "A") {
       dates <- as.Date(ISOdate(as.numeric(dates), 12, 31))

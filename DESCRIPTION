@@ -6,12 +6,16 @@ Imports:
     XML,
     lubridate,
     jsonlite,
-    reshape2
+    reshape2,
+    xml2,
+    stringr,
+    readr
 Type: Package
 Title: Fetch Economic and Financial Time Series Data from Public Sources
-Version: 0.1.7
-Date: 2015-07-15
+Version: 0.1.8
+Date: 2016-12-14
 Author: Abiel Reinhart <abielr@gmail.com>
 Maintainer: Abiel Reinhart <abielr@gmail.com>
 Description: Download economic and financial time series from public sources.
 License: GPL
+RoxygenNote: 5.0.1

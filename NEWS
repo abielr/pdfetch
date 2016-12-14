@@ -1,3 +1,11 @@
+Version 0.1.8
+--------------------------------------
+
+* Fixed UK Office of National Statistics (ONS) functionality. Note that the pdfetch_ONS function is designed to retrieve series from the ONS Time Series Explorer (https://www.ons.gov.uk/timeseriestool), not the UK ONS API.
+* Fixed INSEE functionality.
+* Fixed EIA functionality.
+* Various other fixes
+
 Version 0.1.7
 --------------------------------------
 
