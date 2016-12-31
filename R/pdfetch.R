@@ -186,7 +186,7 @@ pdfetch_EUROSTAT_DSD <- function(flowRef) {
 #' Fetch data from Eurostat
 #' 
 #' Eurostat stores its statistics in data cubes, which can be browsed at
-#' \url{http://epp.eurostat.ec.europa.eu/portal/page/portal/statistics/search_database}. To access data, specify the name of a data cube and optionally filter it based on its dimensions. 
+#' \url{http://ec.europa.eu/eurostat/data/database}. To access data, specify the name of a data cube and optionally filter it based on its dimensions. 
 #' 
 #' @param flowRef Eurostat dataset code
 #' @param from a Date object or string in YYYY-MM-DD format. If supplied, only data on or after this date will be returned

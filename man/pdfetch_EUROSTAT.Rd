@@ -20,7 +20,7 @@ a xts object
 }
 \description{
 Eurostat stores its statistics in data cubes, which can be browsed at
-\url{http://epp.eurostat.ec.europa.eu/portal/page/portal/statistics/search_database}. To access data, specify the name of a data cube and optionally filter it based on its dimensions.
+\url{http://ec.europa.eu/eurostat/data/database}. To access data, specify the name of a data cube and optionally filter it based on its dimensions.
 }
 \examples{
 tryCatch(pdfetch_EUROSTAT("namq_gdp_c", FREQ="Q", S_ADJ="SWDA", UNIT="MIO_EUR", 
