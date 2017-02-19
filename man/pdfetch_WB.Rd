@@ -19,9 +19,11 @@ a xts object
 Fetch data from World Bank
 }
 \examples{
-tryCatch(pdfetch_WB("NY.GDP.MKTP.CD", c("BR","MX")),
-         error = function(e) {},
-         warning = function(w) {}
-)
+\dontrun{
+pdfetch_WB("NY.GDP.MKTP.CD", c("BR","MX"))
+}
+}
+\seealso{
+\url{http://data.worldbank.org/}
 }
 

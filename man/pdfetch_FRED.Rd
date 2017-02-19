@@ -16,9 +16,11 @@ a xts object
 Fetch data from St Louis Fed's FRED database
 }
 \examples{
-tryCatch(pdfetch_FRED(c("GDPC1", "PCECC96")),
-         error = function(e) {},
-         warning = function(w) {}
-)
+\dontrun{
+pdfetch_FRED(c("GDPC1", "PCECC96"))
+}
+}
+\seealso{
+\url{https://fred.stlouisfed.org/}
 }
 

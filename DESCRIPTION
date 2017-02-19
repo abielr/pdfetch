@@ -13,9 +13,12 @@ Imports:
 Type: Package
 Title: Fetch Economic and Financial Time Series Data from Public Sources
 Version: 0.1.8
-Date: 2016-12-14
+Date: 2017-02-17
 Author: Abiel Reinhart <abielr@gmail.com>
 Maintainer: Abiel Reinhart <abielr@gmail.com>
-Description: Download economic and financial time series from public sources.
+Description: Download economic and financial time series from public sources, 
+  including the St Louis Fed's FRED system, Yahoo Finance, the US Bureau of Labor Statistics, 
+  the US Energy Information Administration, the World Bank, Eurostat, the European Central Bank,
+  the Bank of England, the UK's Office of National Statistics, and INSEE.
 License: GPL
 RoxygenNote: 5.0.1

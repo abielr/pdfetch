@@ -21,9 +21,11 @@ a xts object
 Fetch data from U.S. Bureau of Labor Statistics
 }
 \examples{
-tryCatch(pdfetch_BLS(c("EIUIR","EIUIR100"), 2005, 2010),
-         error = function(e) {},
-         warning = function(w) {}
-)
+\dontrun{
+pdfetch_BLS(c("EIUIR","EIUIR100"), 2005, 2010)
+}
+}
+\seealso{
+\url{https://www.bls.gov/data/}
 }
 

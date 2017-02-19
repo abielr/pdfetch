@@ -15,12 +15,12 @@ pdfetch_ONS(identifiers, dataset)
 a xts object
 }
 \description{
-Fetch data from the UK Office of National Statistics
+The ONS maintains multiple data products; this function can be used to
+retrieve data from the Time Series Explorer, see \url{https://www.ons.gov.uk/timeseriestool}
 }
 \examples{
-tryCatch(pdfetch_ONS(c("LF24","LF2G"), "lms"),
-         error = function(e) {},
-         warning = function(w) {}
-)
+\dontrun{
+pdfetch_ONS(c("LF24","LF2G"), "lms")
+}
 }
 

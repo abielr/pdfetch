@@ -16,9 +16,11 @@ a xts object
 Fetch data from the French National Institute of Statistics and Economic Studies (INSEE)
 }
 \examples{
-tryCatch(pdfetch_INSEE(c("000810635")),
-   error = function(e) {},
-   warning = function(w) {}
-)
+\dontrun{
+pdfetch_INSEE(c("000810635"))
+}
+}
+\seealso{
+\url{https://www.insee.fr/}
 }
 

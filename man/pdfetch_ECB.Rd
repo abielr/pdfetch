@@ -16,9 +16,11 @@ a xts object
 Fetch data from European Central Bank's statistical data warehouse
 }
 \examples{
-tryCatch(pdfetch_ECB("FM.B.U2.EUR.4F.KR.DFR.CHG"),
-         error = function(e) {},
-         warning = function(w) {}
-)
+\dontrun{
+pdfetch_ECB("FM.B.U2.EUR.4F.KR.DFR.CHG")
+}
+}
+\seealso{
+\url{http://sdw.ecb.europa.eu/}
 }
 

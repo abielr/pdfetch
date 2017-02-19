@@ -23,12 +23,12 @@ a xts object
 Fetch data from Yahoo Finance
 }
 \examples{
-tryCatch({
-   pdfetch_YAHOO(c("^gspc","^ixic"))
-   pdfetch_YAHOO(c("^gspc","^ixic"), "adjclose")
-   },
-   error = function(e) {},
-   warning = function(w) {}
-)
+\dontrun{
+pdfetch_YAHOO(c("^gspc","^ixic"))
+pdfetch_YAHOO(c("^gspc","^ixic"), "adjclose")
+}
+}
+\seealso{
+\url{https://finance.yahoo.com/}
 }
 

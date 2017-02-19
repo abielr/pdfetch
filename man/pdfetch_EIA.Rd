@@ -18,9 +18,11 @@ a xts object
 Fetch data from the US Energy Information Administration
 }
 \examples{
-tryCatch(pdfetch_EIA(c("ELEC.GEN.ALL-AK-99.A","ELEC.GEN.ALL-AK-99.Q"), EIA_KEY),
-         error = function(e) {},
-         warning = function(w) {}
-)
+\dontrun{
+pdfetch_EIA(c("ELEC.GEN.ALL-AK-99.A","ELEC.GEN.ALL-AK-99.Q"), EIA_KEY)
+}
+}
+\seealso{
+\url{http://www.eia.gov/}
 }
 

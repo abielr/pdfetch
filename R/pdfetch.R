@@ -6,14 +6,12 @@
 #' @param to a Date object or string in YYYY-MM-DD format. If supplied, only data on or before this date will be returned
 #' @return a xts object
 #' @export
+#' @seealso \url{https://finance.yahoo.com/}
 #' @examples
-#' tryCatch({
-#'    pdfetch_YAHOO(c("^gspc","^ixic"))
-#'    pdfetch_YAHOO(c("^gspc","^ixic"), "adjclose")
-#'    },
-#'    error = function(e) {},
-#'    warning = function(w) {}
-#' )
+#' \dontrun{
+#' pdfetch_YAHOO(c("^gspc","^ixic"))
+#' pdfetch_YAHOO(c("^gspc","^ixic"), "adjclose")
+#' }
 pdfetch_YAHOO <- function(identifiers, 
                           fields=c("open","high","low","close","volume","adjclose"),
                           from=as.Date("2007-01-01"),
@@ -62,11 +60,11 @@ pdfetch_YAHOO <- function(identifiers,
 #' @param identifiers a vector of FRED series IDs
 #' @return a xts object
 #' @export
+#' @seealso \url{https://fred.stlouisfed.org/}
 #' @examples
-#' tryCatch(pdfetch_FRED(c("GDPC1", "PCECC96")),
-#'          error = function(e) {},
-#'          warning = function(w) {}
-#' )
+#' \dontrun{
+#' pdfetch_FRED(c("GDPC1", "PCECC96"))
+#' }
 pdfetch_FRED <- function(identifiers) {  
   results <- list()
   for (i in 1:length(identifiers)) {
@@ -104,11 +102,11 @@ pdfetch_FRED <- function(identifiers) {
 #' @param identifiers a vector of ECB series IDs
 #' @return a xts object
 #' @export
+#' @seealso \url{http://sdw.ecb.europa.eu/}
 #' @examples
-#' tryCatch(pdfetch_ECB("FM.B.U2.EUR.4F.KR.DFR.CHG"),
-#'          error = function(e) {},
-#'          warning = function(w) {}
-#' )
+#' \dontrun{
+#' pdfetch_ECB("FM.B.U2.EUR.4F.KR.DFR.CHG")
+#' }
 pdfetch_ECB <- function(identifiers) {
   results <- list()
   for (i in 1:length(identifiers)) {
@@ -159,10 +157,9 @@ pdfetch_EUROSTAT_GETDSD <- function(flowRef) {
 #' @param flowRef Eurostat dataset code
 #' @export
 #' @examples
-#' tryCatch(pdfetch_EUROSTAT_DSD("namq_gdp_c"),
-#'          error = function(e) {},
-#'          warning = function(w) {}
-#' )
+#' \dontrun{
+#' pdfetch_EUROSTAT_DSD("namq_gdp_c")
+#' }
 pdfetch_EUROSTAT_DSD <- function(flowRef) {
   doc <- pdfetch_EUROSTAT_GETDSD(flowRef)
   concepts <- setdiff(unlist(getNodeSet(doc, "//str:Dimension/@id")), c("OBS_VALUE","OBS_STATUS","OBS_FLAG"))
@@ -195,11 +192,10 @@ pdfetch_EUROSTAT_DSD <- function(flowRef) {
 #' @return a xts object
 #' @export
 #' @examples
-#' tryCatch(pdfetch_EUROSTAT("namq_gdp_c", FREQ="Q", S_ADJ="SWDA", UNIT="MIO_EUR", 
-#'                           INDIC_NA="B1GM", GEO=c("DE","UK")),
-#'          error = function(e) {},
-#'          warning = function(w) {}
-#' )
+#' \dontrun{
+#' pdfetch_EUROSTAT("namq_gdp_c", FREQ="Q", S_ADJ="SWDA", UNIT="MIO_EUR", 
+#'                           INDIC_NA="B1GM", GEO=c("DE","UK"))
+#' }
 pdfetch_EUROSTAT <- function(flowRef, from, to, ...) {
   arguments <- list(...)
   doc <- pdfetch_EUROSTAT_GETDSD(flowRef)
@@ -287,11 +283,11 @@ pdfetch_EUROSTAT <- function(flowRef, from, to, ...) {
 #'   3-character ISO codes. The special option "all" retrieves all countries.
 #' @return a xts object
 #' @export
+#' @seealso \url{http://data.worldbank.org/}
 #' @examples
-#' tryCatch(pdfetch_WB("NY.GDP.MKTP.CD", c("BR","MX")),
-#'          error = function(e) {},
-#'          warning = function(w) {}
-#' )
+#' \dontrun{
+#' pdfetch_WB("NY.GDP.MKTP.CD", c("BR","MX"))
+#' }
 pdfetch_WB <- function(indicators, countries="all") {
   countries <- paste(countries, collapse=";")
   indicators <- paste(indicators, collapse=";")
@@ -320,11 +316,11 @@ pdfetch_WB <- function(indicators, countries="all") {
 #' @param to end date; if not given, today's date will be used
 #' @return a xts object
 #' @export
+#' @seealso \url{http://www.bankofengland.co.uk/boeapps/iadb/}
 #' @examples
-#' tryCatch(pdfetch_BOE(c("LPMVWYR", "LPMVWYR"), "2012-01-01"),
-#'          error = function(e) {},
-#'          warning = function(w) {}
-#' )
+#' \dontrun{
+#' pdfetch_BOE(c("LPMVWYR", "LPMVWYR"), "2012-01-01")
+#' }
 pdfetch_BOE <- function(identifiers, from, to=Sys.Date()) {
   if (length(identifiers) > 300)
     stop("At most 300 series can be downloaded at once")
@@ -355,11 +351,11 @@ pdfetch_BOE <- function(identifiers, from, to=Sys.Date()) {
 #'   that is beyond the last available data point in the series.
 #' @return a xts object
 #' @export
+#' @seealso \url{https://www.bls.gov/data/}
 #' @examples
-#' tryCatch(pdfetch_BLS(c("EIUIR","EIUIR100"), 2005, 2010),
-#'          error = function(e) {},
-#'          warning = function(w) {}
-#' )
+#' \dontrun{
+#' pdfetch_BLS(c("EIUIR","EIUIR100"), 2005, 2010)
+#' }
 pdfetch_BLS <- function(identifiers, from, to) {
   if (!is.numeric(from) || !is.numeric(to))
     stop("Both from and to must be integers")
@@ -382,7 +378,7 @@ pdfetch_BLS <- function(identifiers, from, to) {
       from <- years[i-1]
     
     req <- list(seriesid=identifiers, startyear=unbox(from), endyear=unbox(to))
-    resp <- POST("http://api.bls.gov/publicAPI/v1/timeseries/data/", body=req, encode="json")
+    resp <- POST("https://api.bls.gov/publicAPI/v1/timeseries/data/", body=req, encode="json")
     resp <- fromJSON(content(resp, as="text", encoding="utf-8"))
     
     if (resp$status != "REQUEST_SUCCEEDED")
@@ -436,11 +432,11 @@ pdfetch_BLS <- function(identifiers, from, to) {
 #' @param identifiers a vector of INSEE series codes
 #' @return a xts object
 #' @export
+#' @seealso \url{https://www.insee.fr/}
 #' @examples
-#' tryCatch(pdfetch_INSEE(c("000810635")),
-#'    error = function(e) {},
-#'    warning = function(w) {}
-#' )
+#' \dontrun{
+#' pdfetch_INSEE(c("000810635"))
+#' }
 pdfetch_INSEE <- function(identifiers) {
   results <- list()
   
@@ -492,15 +488,18 @@ pdfetch_INSEE <- function(identifiers) {
 }
 
 #' Fetch data from the UK Office of National Statistics
+#' 
+#' The ONS maintains multiple data products; this function can be used to
+#' retrieve data from the Time Series Explorer, see \url{https://www.ons.gov.uk/timeseriestool}
+#' 
 #' @param identifiers a vector of ONS series codes
 #' @param dataset optional ONS dataset name, only used if a time series is available in multiple datasets.
 #' @return a xts object
 #' @export
 #' @examples
-#' tryCatch(pdfetch_ONS(c("LF24","LF2G"), "lms"),
-#'          error = function(e) {},
-#'          warning = function(w) {}
-#' )
+#' \dontrun{
+#' pdfetch_ONS(c("LF24","LF2G"), "lms")
+#' }
 pdfetch_ONS <- function(identifiers, dataset) {
   identifiers <- tolower(identifiers)
   
@@ -577,11 +576,11 @@ pdfetch_ONS <- function(identifiers, dataset) {
 #' @param api_key EIA API key
 #' @return a xts object
 #' @export
+#' @seealso \url{http://www.eia.gov/}
 #' @examples
-#' tryCatch(pdfetch_EIA(c("ELEC.GEN.ALL-AK-99.A","ELEC.GEN.ALL-AK-99.Q"), EIA_KEY),
-#'          error = function(e) {},
-#'          warning = function(w) {}
-#' )
+#' \dontrun{
+#' pdfetch_EIA(c("ELEC.GEN.ALL-AK-99.A","ELEC.GEN.ALL-AK-99.Q"), EIA_KEY)
+#' }
 pdfetch_EIA <- function(identifiers, api_key) {
   results <- list()
   

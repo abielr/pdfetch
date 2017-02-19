@@ -13,9 +13,8 @@ pdfetch_EUROSTAT_DSD(flowRef)
 Fetch description for a Eurostat dataset
 }
 \examples{
-tryCatch(pdfetch_EUROSTAT_DSD("namq_gdp_c"),
-         error = function(e) {},
-         warning = function(w) {}
-)
+\dontrun{
+pdfetch_EUROSTAT_DSD("namq_gdp_c")
+}
 }
 

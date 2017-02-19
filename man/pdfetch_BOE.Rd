@@ -20,9 +20,11 @@ a xts object
 Fetch data from the Bank of England Interactive Statistical Database
 }
 \examples{
-tryCatch(pdfetch_BOE(c("LPMVWYR", "LPMVWYR"), "2012-01-01"),
-         error = function(e) {},
-         warning = function(w) {}
-)
+\dontrun{
+pdfetch_BOE(c("LPMVWYR", "LPMVWYR"), "2012-01-01")
+}
+}
+\seealso{
+\url{http://www.bankofengland.co.uk/boeapps/iadb/}
 }
 
