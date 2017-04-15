@@ -470,7 +470,7 @@ pdfetch_INSEE <- function(identifiers) {
         stop("Unrecognized frequency")
       }
       
-      values <- as.numeric(gsub("[^0-9]", "", dat[,ncol(dat)]))
+      values <- as.numeric(gsub("[^-.0-9]", "", dat[,ncol(dat)]))
       dates <- month_end(dates)
       
       x <- xts(values, dates)

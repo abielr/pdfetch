@@ -1,3 +1,7 @@
+Version 0.1.9
+--------------------------------------
+* Fixed INSEE function so that negative signs and periods are not stripped (thanks to Hadrian Leclerc)
+
 Version 0.1.8
 --------------------------------------
 
