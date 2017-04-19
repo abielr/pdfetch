@@ -1,3 +1,7 @@
+Version 0.2.0
+--------------------------------------
+* Fixed Yahoo function so that Volume column is correctly read as numeric instead of character. This bug was also causing problems when downloading more than two tickers.
+
 Version 0.1.9
 --------------------------------------
 * Fixed INSEE function so that negative signs and periods are not stripped (thanks to Hadrian Leclerc)

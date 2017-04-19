@@ -30,6 +30,7 @@ pdfetch_YAHOO <- function(identifiers,
     stop(paste0("Invalid fields, must be one of ", valid.fields))
   
   results <- list()
+  col_types <- paste0("D", paste(rep("d", length(valid.fields)), collapse=""))
   for (i in 1:length(identifiers)) {
     url <- paste0("http://chart.yahoo.com/table.csv?s=",identifiers[i],
                          "&c=", year(from),
@@ -39,7 +40,7 @@ pdfetch_YAHOO <- function(identifiers,
                          "&d=", month(to)-1,
                          "&e=", day(to))
     req <- GET(url)
-    fr <- content(req, encoding="utf-8", col_types=readr::cols())
+    fr <- content(req, encoding="utf-8", as="parsed", col_types=col_types)
     x <- xts(fr[,match(fields, valid.fields)+1], as.Date(fr[[1]]))
     dim(x) <- c(nrow(x),ncol(x))
     if (length(fields)==1)
@@ -148,7 +149,7 @@ pdfetch_ECB <- function(identifiers) {
 pdfetch_EUROSTAT_GETDSD <- function(flowRef) {
   url <- paste0("http://ec.europa.eu/eurostat/SDMX/diss-web/rest/datastructure/ESTAT/DSD_", flowRef)
   req <- GET(url, add_headers(useragent="RCurl"))
-  doc <- xmlInternalTreeParse(content(req, as="text"))
+  doc <- xmlInternalTreeParse(content(req, as="text", encoding="utf-8"))
   
   doc
 }
