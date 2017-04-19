@@ -4,6 +4,7 @@ Supported sources
 * Europe - European Central Bank
 * Europe - Eurostat
 * France - INSEE
+* Germany - Deutsche Bundesbank
 * Global - World Bank
 * Global - Yahoo Finance
 * UK - Bank of England

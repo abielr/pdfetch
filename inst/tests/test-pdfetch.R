@@ -59,3 +59,7 @@ test_that("test EIA", {
   x <- pdfetch_EIA(c("PET.EMM_EPM0_PTE_NUS_DPG.W"), EIA_KEY)
   x <- pdfetch_EIA(c("PET.RWTC.D"), EIA_KEY)
 })
+
+test_that("test Bundesbank", {
+  x <- pdfetch_BUNDESBANK(c("BBNZ1.Q.DE.Y.H.0000.A","BBK01.BJ9069"))
+})

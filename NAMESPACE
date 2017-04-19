@@ -2,6 +2,7 @@
 
 export(pdfetch_BLS)
 export(pdfetch_BOE)
+export(pdfetch_BUNDESBANK)
 export(pdfetch_ECB)
 export(pdfetch_EIA)
 export(pdfetch_EUROSTAT)

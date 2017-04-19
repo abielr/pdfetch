@@ -1,3 +1,7 @@
+Version 0.2.1
+--------------------------------------
+* Added support for Deutsche Bundesbank's time series database
+
 Version 0.2.0
 --------------------------------------
 * Fixed Yahoo function so that Volume column is correctly read as numeric instead of character. This bug was also causing problems when downloading more than two tickers.
