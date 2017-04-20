@@ -22,3 +22,5 @@ Description: Download economic and financial time series from public sources,
   the Bank of England, the UK's Office of National Statistics, Deutsche Bundesbank, and INSEE.
 License: GPL
 RoxygenNote: 5.0.1
+URL: https://github.com/abielr/pdfetch
+BugReports: https://github.com/abielr/pdfetch/issues
