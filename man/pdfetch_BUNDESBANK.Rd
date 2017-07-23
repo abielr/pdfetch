@@ -23,4 +23,3 @@ pdfetch_BUNDESBANK(c("BBNZ1.Q.DE.Y.H.0000.A","BBK01.BJ9069"))
 \seealso{
 \url{https://www.bundesbank.de/Navigation/EN/Statistics/Time_series_databases/time_series_databases.html}
 }
-

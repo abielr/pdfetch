@@ -26,4 +26,3 @@ pdfetch_WB("NY.GDP.MKTP.CD", c("BR","MX"))
 \seealso{
 \url{http://data.worldbank.org/}
 }
-

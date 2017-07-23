@@ -1,9 +1,12 @@
+.pdenv <- new.env(parent=emptyenv())
+
 #' Fetch data from Yahoo Finance
 #' 
 #' @param identifiers a vector of Yahoo Finance tickers
 #' @param fields can be any of "open", "high", "low", "close", "volume", or "adjclose"
 #' @param from a Date object or string in YYYY-MM-DD format. If supplied, only data on or after this date will be returned
 #' @param to a Date object or string in YYYY-MM-DD format. If supplied, only data on or before this date will be returned
+#' @param interval the frequency of the return data, can be '1d', '1wk', or '1mo'
 #' @return a xts object
 #' @export
 #' @seealso \url{https://finance.yahoo.com/}
@@ -15,9 +18,11 @@
 pdfetch_YAHOO <- function(identifiers, 
                           fields=c("open","high","low","close","volume","adjclose"),
                           from=as.Date("2007-01-01"),
-                          to=Sys.Date()) {
+                          to=Sys.Date(),
+                          interval="1d") {
   
   valid.fields <- c("open","high","low","close","volume","adjclose")
+  interval <- match.arg(interval, c("1d","1wk","1mo"))
   
   if (!missing(from))
     from <- as.Date(from)
@@ -30,25 +35,75 @@ pdfetch_YAHOO <- function(identifiers,
     stop(paste0("Invalid fields, must be one of ", valid.fields))
   
   results <- list()
-  col_types <- paste0("D", paste(rep("d", length(valid.fields)), collapse=""))
+  from <- as.numeric(as.POSIXct(from))
+  to <- as.numeric(as.POSIXct(to))
+  
+  # The following borrows from quantmod, thank you to Joshua Ulrich.
+  if (is.null(.pdenv$handle)) {
+    h <- list()
+    
+    # establish session
+    new.session <- function() {
+      tmp <- tempfile()
+      on.exit(unlink(tmp))
+      
+      for (i in 1:5) {
+        h <- curl::new_handle()
+        # random query to avoid cache
+        ru <- paste(sample(c(letters, 0:9), 4), collapse = "")
+        cu <- paste0("https://finance.yahoo.com?", ru)
+        curl::curl_download(cu, tmp, handle = h)
+        if (NROW(curl::handle_cookies(h)) > 0)
+          break;
+        Sys.sleep(0.1)
+      }
+      
+      if (NROW(curl::handle_cookies(h)) == 0)
+        stop("Could not establish session after 5 attempts.")
+      
+      return(h)
+    }
+    
+    h$ch <- new.session()
+    
+    n <- if (unclass(Sys.time()) %% 1L >= 0.5) 1L else 2L
+    query.srv <- paste0("https://query", n, ".finance.yahoo.com/",
+                        "v1/test/getcrumb")
+    cres <- curl::curl_fetch_memory(query.srv, handle = h$ch)
+    
+    h$crumb <- rawToChar(cres$content)
+    .pdenv$handle <- h
+  }
+  
+  h <- .pdenv$handle
+  
   for (i in 1:length(identifiers)) {
-    url <- paste0("http://chart.yahoo.com/table.csv?s=",identifiers[i],
-                         "&c=", year(from),
-                         "&a=", month(from)-1,
-                         "&b=", day(from),
-                         "&f=", year(to),
-                         "&d=", month(to)-1,
-                         "&e=", day(to))
-    req <- GET(url)
-    fr <- content(req, encoding="utf-8", as="parsed", col_types=col_types)
-    x <- xts(fr[,match(fields, valid.fields)+1], as.Date(fr[[1]]))
-    dim(x) <- c(nrow(x),ncol(x))
+    url <- paste0("https://query1.finance.yahoo.com/v7/finance/download/",identifiers[i],
+                  "?period1=",from,"&period2=",to,"&interval=",interval,"&events=history&crumb=",
+                  h$crumb)
+    
+    resp <- curl::curl_fetch_memory(url, handle=h$ch)
+    if (resp$status != 200) {
+      warning(paste0("Could not find series '",identifiers[i],"'"))
+      next
+    }
+    fr <- utils::read.csv(text=rawToChar(resp$content), na.strings="null")
+
+    dates <- as.Date(fr$Date)
+    fr <- fr[,-1]
+    fr <- fr[,match(fields, valid.fields), drop=F]
+
     if (length(fields)==1)
-      colnames(x) <- identifiers[i]
+      colnames(fr) <- identifiers[i]
     else
-      colnames(x) <- paste(identifiers[i], fields, sep=".")
+      colnames(fr) <- paste(identifiers[i], fields, sep=".")
+
+    x <- xts(fr, dates)
     results[[identifiers[i]]] <- x
   }
+  
+  if (length(results) == 0)
+    return(NULL)
   
   storenames <- sapply(results, names)
   results <- do.call(merge.xts, results)
@@ -442,44 +497,43 @@ pdfetch_INSEE <- function(identifiers) {
   results <- list()
   
   for (id in identifiers) {
-    url <- paste0("http://www.bdm.insee.fr/bdm2/affichageSeries.action?idbank=",id)
-    page <- tryCatch({
-      req <- GET(url, add_headers("Accept-Language"="en-US,en;q=0.8"))
-      content(req, as="text")
-    }, warning = function(w) {
-      
-    })
-    
-    if (!is.null(page)) {
-      doc <- htmlParse(page)
-      dat <- readHTMLTable(doc)[[1]]
-      names(dat) <- c(as.character(dat[1,1]), as.character(dat[1,2]), as.character(dat[1,3]))
-      dat <- utils::tail(dat, -1)
-      
-      if (names(dat)[2] == "Month") {
-        year <- as.numeric(as.character(dat[,1]))
-        month <- as.character(dat[,2])
-        dates <- as.Date(paste(year, month, 1), format="%Y %b %d")
-      } else if (names(dat[2]) == "Quarter") {
-        year <- as.numeric(as.character(dat[,1]))
-        month <- as.numeric(as.character(dat[,2]))*3
-        dates <- as.Date(ISOdate(year, month, 1))
-      } else if (ncol(dat) == 2) {
-        year <- as.numeric(as.character(dat[,1]))
-        dates <- as.Date(ISOdate(year, 12, 31))
-      } else {
-        stop("Unrecognized frequency")
-      }
-      
-      values <- as.numeric(gsub("[^-.0-9]", "", dat[,ncol(dat)]))
-      dates <- month_end(dates)
-      
-      x <- xts(values, dates)
-      colnames(x) <- id
-      results[[id]] <- x 
-    } else {
-      warning(paste("Series", id, "not found"))
+    url <- paste0("https://www.insee.fr/en/statistiques/serie/ajax/",id)
+    resp <- GET(url, add_headers("Accept-Language"="en-US,en;q=0.8"))
+    if (resp$status_code != 200) {
+      warning(paste0("Series ", id, " not found"))
+      next
     }
+    page <- content(resp)
+    freq <- page$series[[1]]$frequence
+    page <- xml2::read_html(page$html)
+    values <- as.numeric(gsub("[^-.0-9]", "", xml2::xml_text(xml2::xml_find_all(page, "//td[@class='nombre']"))))
+    
+    if (freq == 'M') {
+      year <- as.numeric(xml2::xml_text(xml2::xml_find_all(page, "//td[not(@class='nombre')]/text()")))
+      month <- as.numeric(substr(xml2::xml_attr(xml2::xml_find_all(page, "//td[not(@class='nombre')]/span"), "data-i18n"), 13, 14))
+    } else if (freq == 'B') {
+      nodes <- xml2::xml_text(xml2::xml_find_all(page, "//td[not(@class='nombre')]"))
+      year <- as.numeric(nodes[seq(1,length(nodes)-1,2)])
+      month <- as.numeric(substr(nodes[seq(2,length(nodes),2)], 2, 2))*2
+    } else if (freq == 'T') {
+      nodes <- xml2::xml_text(xml2::xml_find_all(page, "//td[not(@class='nombre')]"))
+      year <- as.numeric(nodes[seq(1,length(nodes)-1,2)])
+      month <- as.numeric(substr(nodes[seq(2,length(nodes),2)], 2, 2))*3
+    } else if (freq == 'S') {
+      nodes <- xml2::xml_text(xml2::xml_find_all(page, "//td[not(@class='nombre')]"))
+      year <- as.numeric(nodes[seq(1,length(nodes)-1,2)])
+      month <- as.numeric(substr(nodes[seq(2,length(nodes),2)], 2, 2))*6
+    } else if (freq == 'A') {
+      year <- as.numeric(xml2::xml_text(xml2::xml_find_all(page, "//td[not(@class='nombre')]")))
+      month <- 12
+    } else {
+      warning(paste0("Unrecognized frequency code '", freq, "' for series ", id, ". Skipping"))
+    }
+    dates <- month_end(as.Date(ISOdate(year, month, 1)))
+    
+    x <- xts(values, dates)
+    colnames(x) <- id
+    results[[id]] <- x 
   }
   
   if (length(results) == 0)
@@ -507,63 +561,32 @@ pdfetch_ONS <- function(identifiers, dataset) {
   results <- list()
   
   for (id in identifiers) {
-    url <- paste0("http://www.ons.gov.uk/search?q=",id)
-    resp <- GET(url)
-    ret_url <- resp$url
-    
-    if (ret_url==url) {
-      warning(paste0("Could not find series '", id, "' in ONS time series database"))
-      next()
-    }
-    
-    url <- paste0("https://www.ons.gov.uk/generator?format=csv&uri=/", parse_url(ret_url)$path)
-    
-    default_dataset <- utils::tail(stringr::str_split(url, "/")[[1]],1)
-    
-    alternate_nodes <- xml2::xml_attr(xml2::xml_find_all(content(resp), "//div[@id='othertimeseries']//a"), "href")
-    alternate_urls <- list()
-    for (alt_url in alternate_nodes) {
-      dataset_name <- utils::tail(stringr::str_split(alt_url, "/")[[1]], 1)
-      alternate_urls[[dataset_name]] <- alt_url
-    }
-    
-    if (!missing(dataset)) {
-      dataset <- tolower(dataset)
-      if (dataset!=default_dataset) {
-        if (dataset %in% names(alternate_urls)) {
-          url <- paste0("https://www.ons.gov.uk/generator?format=csv&uri=", alternate_urls[[dataset_name]])
-        } else {
-          warning(paste0("Series '", id, "' not found in dataset '", dataset, "'. Using default dataset '", default_dataset, "' instead."))
-        }
-      }
-    }
+    url <- paste0("https://api.ons.gov.uk/dataset/",dataset,"/timeseries/",id,"/data")
 
-    fr <- content(GET(url), col_types=readr::cols())
-    
-    datesA <- grep("^[0-9]{4}$", fr[[1]])
-    datesQ <- grep("^[0-9]{4} Q[1-4]$", fr[[1]])
-    datesM <- grep("^[0-9]{4} [A-Z]{3}$", fr[[1]])
-    
-    dates <- NULL
-    if (length(datesM) > 0) {
-      dates <- as.Date(paste(fr[[1]][datesM],1), "%Y %b %d")
-      dateix <- datesM
-    } else if (length(datesQ) > 0) {
-      y <- as.numeric(substr(fr[[1]][datesQ], 1, 4))
-      m <- as.numeric(substr(fr[[1]][datesQ], 7, 7))*3
-      dates <- as.Date(ISOdate(y, m, 1))
-      dateix <- datesQ
-    } else if (length(datesA) > 0) {
-      dates <- as.Date(ISOdate(as.numeric(fr[[1]][datesA]), 12, 31))
-      dateix <- datesA
+    raw <- content(GET(url))
+    if (is.null(raw)) {
+      warning(paste0('Series ', id, ' in dataset ', dataset, ' not found.'))
+      next
     }
     
-    if (!is.null(dates)) {
-      dates <- month_end(dates)
-      x <- xts(as.numeric(fr[[2]][dateix]), dates)
-      colnames(x) <- toupper(id)
-      results[[id]] <- x
+    if (length(raw$months) > 0) {
+      month <- sapply(raw$months, function(x) match(x$month, c("January","February","March","April","May","June","July","August","September","October","November","December")))
+      year <- sapply(raw$months, function(x) as.numeric(x$year))
+      values <- sapply(raw$months, function(x) as.numeric(x$value))
+    } else if (length(raw$quarters) > 0) {
+      month <- sapply(raw$quarters, function(x) 3*as.numeric(substr(x$quarter, 2, 2)))
+      year <- sapply(raw$quarters, function(x) as.numeric(x$year))
+      values <- sapply(raw$quarters, function(x) as.numeric(x$value))
+    } else {
+      month <- 12
+      year <- sapply(raw$years, function(x) as.numeric(x$year))
+      values <- sapply(raw$years, function(x) as.numeric(x$value))
     }
+    
+    dates <- month_end(as.Date(ISOdate(year, month, 1)))
+    x <- xts(values, dates)
+    colnames(x) <- toupper(id)
+    results[[id]] <- x
   }
 
   if (length(results) == 0)
@@ -585,6 +608,8 @@ pdfetch_ONS <- function(identifiers, dataset) {
 pdfetch_EIA <- function(identifiers, api_key) {
   results <- list()
   
+  freqlist <- c()
+  
   for (i in 1:length(identifiers)) {
     id <- identifiers[i]
     url <- paste0("http://api.eia.gov/series/?series_id=",id,"&api_key=",api_key)
@@ -599,6 +624,7 @@ pdfetch_EIA <- function(identifiers, api_key) {
     freq <- res$series$f
     dates <- res$series$data[[1]][,1]
     data <- as.numeric(res$series$data[[1]][,2])
+    freqlist <- c(freqlist, freq)
     
     if (freq == "A") {
       dates <- as.Date(ISOdate(as.numeric(dates), 12, 31))
@@ -612,8 +638,11 @@ pdfetch_EIA <- function(identifiers, api_key) {
       dates <- month_end(as.Date(ISOdate(y,m,1)))
     } else if (freq == "W" || freq == "D") {
       dates <- as.Date(dates, "%Y%m%d")
+    } else if (freq == "H") {
+      dates <- as.POSIXct(dates, format="%Y%m%dT%HZ")
     } else {
       warning(paste("Unrecognized frequency",freq,"for series",id))
+      next
     }
     
     x <- xts(rev(data), rev(dates))
@@ -623,6 +652,9 @@ pdfetch_EIA <- function(identifiers, api_key) {
   
   if (length(results) == 0)
     return(NULL)
+  
+  if ("H" %in% freqlist && !all(freqlist=="H"))
+    stop("You cannot mix hourly and non-hourly data in the same call")
   
   na.trim(do.call(merge.xts, results), is.na="all")
 }

@@ -5,7 +5,8 @@
 \title{Fetch data from Yahoo Finance}
 \usage{
 pdfetch_YAHOO(identifiers, fields = c("open", "high", "low", "close",
-  "volume", "adjclose"), from = as.Date("2007-01-01"), to = Sys.Date())
+  "volume", "adjclose"), from = as.Date("2007-01-01"), to = Sys.Date(),
+  interval = "1d")
 }
 \arguments{
 \item{identifiers}{a vector of Yahoo Finance tickers}
@@ -15,6 +16,8 @@ pdfetch_YAHOO(identifiers, fields = c("open", "high", "low", "close",
 \item{from}{a Date object or string in YYYY-MM-DD format. If supplied, only data on or after this date will be returned}
 
 \item{to}{a Date object or string in YYYY-MM-DD format. If supplied, only data on or before this date will be returned}
+
+\item{interval}{the frequency of the return data, can be '1d', '1wk', or '1mo'}
 }
 \value{
 a xts object
@@ -31,4 +34,3 @@ pdfetch_YAHOO(c("^gspc","^ixic"), "adjclose")
 \seealso{
 \url{https://finance.yahoo.com/}
 }
-

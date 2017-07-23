@@ -27,4 +27,3 @@ pdfetch_BOE(c("LPMVWYR", "LPMVWYR"), "2012-01-01")
 \seealso{
 \url{http://www.bankofengland.co.uk/boeapps/iadb/}
 }
-

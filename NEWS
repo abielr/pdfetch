@@ -1,3 +1,10 @@
+Version 0.2.2
+--------------------------------------
+* Fixed Yahoo Finance function and added 'interval' argument
+* Fixed UK ONS function
+* Fixed French INSEE function
+* Added support for hourly data to the US EIA function
+
 Version 0.2.1
 --------------------------------------
 * Added support for Deutsche Bundesbank's time series database

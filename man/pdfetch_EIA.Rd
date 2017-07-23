@@ -25,4 +25,3 @@ pdfetch_EIA(c("ELEC.GEN.ALL-AK-99.A","ELEC.GEN.ALL-AK-99.Q"), EIA_KEY)
 \seealso{
 \url{http://www.eia.gov/}
 }
-

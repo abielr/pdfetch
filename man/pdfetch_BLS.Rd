@@ -28,4 +28,3 @@ pdfetch_BLS(c("EIUIR","EIUIR100"), 2005, 2010)
 \seealso{
 \url{https://www.bls.gov/data/}
 }
-

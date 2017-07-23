@@ -23,4 +23,3 @@ pdfetch_INSEE(c("000810635"))
 \seealso{
 \url{https://www.insee.fr/}
 }
-

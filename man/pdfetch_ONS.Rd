@@ -23,4 +23,3 @@ retrieve data from the Time Series Explorer, see \url{https://www.ons.gov.uk/tim
 pdfetch_ONS(c("LF24","LF2G"), "lms")
 }
 }
-

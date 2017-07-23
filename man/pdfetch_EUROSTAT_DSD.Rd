@@ -17,4 +17,3 @@ Fetch description for a Eurostat dataset
 pdfetch_EUROSTAT_DSD("namq_gdp_c")
 }
 }
-

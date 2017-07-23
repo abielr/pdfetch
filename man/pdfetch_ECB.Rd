@@ -23,4 +23,3 @@ pdfetch_ECB("FM.B.U2.EUR.4F.KR.DFR.CHG")
 \seealso{
 \url{http://sdw.ecb.europa.eu/}
 }
-

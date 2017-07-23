@@ -23,4 +23,3 @@ pdfetch_FRED(c("GDPC1", "PCECC96"))
 \seealso{
 \url{https://fred.stlouisfed.org/}
 }
-

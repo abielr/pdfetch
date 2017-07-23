@@ -28,4 +28,3 @@ pdfetch_EUROSTAT("namq_gdp_c", FREQ="Q", S_ADJ="SWDA", UNIT="MIO_EUR",
                           INDIC_NA="B1GM", GEO=c("DE","UK"))
 }
 }
-
