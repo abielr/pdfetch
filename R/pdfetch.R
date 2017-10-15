@@ -16,12 +16,12 @@
 #' pdfetch_YAHOO(c("^gspc","^ixic"), "adjclose")
 #' }
 pdfetch_YAHOO <- function(identifiers, 
-                          fields=c("open","high","low","close","volume","adjclose"),
+                          fields=c("open","high","low","close","adjclose","volume"),
                           from=as.Date("2007-01-01"),
                           to=Sys.Date(),
                           interval="1d") {
   
-  valid.fields <- c("open","high","low","close","volume","adjclose")
+  valid.fields <- c("open","high","low","close","adjclose","volume")
   interval <- match.arg(interval, c("1d","1wk","1mo"))
   
   if (!missing(from))
@@ -249,7 +249,7 @@ pdfetch_EUROSTAT_DSD <- function(flowRef) {
 #' @export
 #' @examples
 #' \dontrun{
-#' pdfetch_EUROSTAT("namq_gdp_c", FREQ="Q", S_ADJ="SWDA", UNIT="MIO_EUR", 
+#' pdfetch_EUROSTAT("namq_gdp_c", FREQ="Q", S_ADJ="NSA", UNIT="MIO_EUR", 
 #'                           INDIC_NA="B1GM", GEO=c("DE","UK"))
 #' }
 pdfetch_EUROSTAT <- function(flowRef, from, to, ...) {
@@ -433,7 +433,7 @@ pdfetch_BLS <- function(identifiers, from, to) {
     if (i == 2)
       from <- years[i-1]
     
-    req <- list(seriesid=identifiers, startyear=unbox(from), endyear=unbox(to))
+    req <- list(seriesid=I(identifiers), startyear=unbox(from), endyear=unbox(to))
     resp <- POST("https://api.bls.gov/publicAPI/v1/timeseries/data/", body=req, encode="json")
     resp <- fromJSON(content(resp, as="text", encoding="utf-8"))
     

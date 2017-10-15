@@ -5,7 +5,7 @@
 \title{Fetch data from Yahoo Finance}
 \usage{
 pdfetch_YAHOO(identifiers, fields = c("open", "high", "low", "close",
-  "volume", "adjclose"), from = as.Date("2007-01-01"), to = Sys.Date(),
+  "adjclose", "volume"), from = as.Date("2007-01-01"), to = Sys.Date(),
   interval = "1d")
 }
 \arguments{

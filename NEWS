@@ -1,3 +1,8 @@
+Version 0.2.3
+--------------------------------------
+* Fixed error in Yahoo Finance function which swapped adjusted close and volume fields.
+* Fixed error in BLS function which prevented downloading of single series.
+
 Version 0.2.2
 --------------------------------------
 * Fixed Yahoo Finance function and added 'interval' argument

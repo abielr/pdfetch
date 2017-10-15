@@ -24,7 +24,7 @@ Eurostat stores its statistics in data cubes, which can be browsed at
 }
 \examples{
 \dontrun{
-pdfetch_EUROSTAT("namq_gdp_c", FREQ="Q", S_ADJ="SWDA", UNIT="MIO_EUR", 
+pdfetch_EUROSTAT("namq_gdp_c", FREQ="Q", S_ADJ="NSA", UNIT="MIO_EUR", 
                           INDIC_NA="B1GM", GEO=c("DE","UK"))
 }
 }
