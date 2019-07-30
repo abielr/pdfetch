@@ -1,3 +1,7 @@
+Version 0.2.4
+--------------------------------------
+* Fixed INSEE function to be able to read quarterly series that have a "Published in the OJ" date column in the data.
+
 Version 0.2.3
 --------------------------------------
 * Fixed error in Yahoo Finance function which swapped adjusted close and volume fields.

@@ -43,6 +43,7 @@ test_that("test US Bureau of Labor Statistics", {
 
 test_that("test INSEE", {
   x <- pdfetch_INSEE(c("000810635"))
+  x <- pdfetch_INSEE(c("001532540"))
   x <- pdfetch_INSEE(c("001625866","001625866x","001616357"))
   x <- pdfetch_INSEE(c("001625866x"))
 })

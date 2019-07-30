@@ -517,8 +517,8 @@ pdfetch_INSEE <- function(identifiers) {
       month <- as.numeric(substr(nodes[seq(2,length(nodes),2)], 2, 2))*2
     } else if (freq == 'T') {
       nodes <- xml2::xml_text(xml2::xml_find_all(page, "//td[not(@class='nombre')]"))
-      year <- as.numeric(nodes[seq(1,length(nodes)-1,2)])
-      month <- as.numeric(substr(nodes[seq(2,length(nodes),2)], 2, 2))*3
+      year <- as.numeric(nodes[grepl("^\\d{4}$", nodes)])
+      month <- as.numeric(substr(nodes[grepl("^Q\\d{1}$", nodes)], 2, 2))*3
     } else if (freq == 'S') {
       nodes <- xml2::xml_text(xml2::xml_find_all(page, "//td[not(@class='nombre')]"))
       year <- as.numeric(nodes[seq(1,length(nodes)-1,2)])
