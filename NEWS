@@ -1,3 +1,9 @@
+Verison 0.2.5
+--------------------------------------
+* Fixed pdfetch_EIA() function's handling of hourly data when the data cross the Daylight Savings Time boundary. Hourly data is now always reported with the GMT time zone. 
+* Fixed pdfetch_ECB() function
+* Fixed pdfetch_BUNDESBANK() function
+
 Version 0.2.4
 --------------------------------------
 * Fixed INSEE function to be able to read quarterly series that have a "Published in the OJ" date column in the data.
