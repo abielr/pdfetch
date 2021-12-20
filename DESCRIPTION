@@ -7,7 +7,6 @@ Imports:
     lubridate,
     jsonlite,
     reshape2,
-    readr,
     curl,
     xml2,
     stringr
@@ -22,6 +21,6 @@ Description: Download economic and financial time series from public sources,
   the US Energy Information Administration, the World Bank, Eurostat, the European Central Bank,
   the Bank of England, the UK's Office of National Statistics, Deutsche Bundesbank, and INSEE.
 License: GPL
-RoxygenNote: 6.1.1
+RoxygenNote: 7.1.2
 URL: https://github.com/abielr/pdfetch
 BugReports: https://github.com/abielr/pdfetch/issues

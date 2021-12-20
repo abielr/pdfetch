@@ -239,7 +239,7 @@ pdfetch_EUROSTAT_DSD <- function(flowRef) {
 #' Fetch data from Eurostat
 #' 
 #' Eurostat stores its statistics in data cubes, which can be browsed at
-#' \url{http://ec.europa.eu/eurostat/data/database}. To access data, specify the name of a data cube and optionally filter it based on its dimensions. 
+#' \url{https://ec.europa.eu/eurostat/data/database}. To access data, specify the name of a data cube and optionally filter it based on its dimensions. 
 #' 
 #' @param flowRef Eurostat dataset code
 #' @param from a Date object or string in YYYY-MM-DD format. If supplied, only data on or after this date will be returned
@@ -339,7 +339,7 @@ pdfetch_EUROSTAT <- function(flowRef, from, to, ...) {
 #'   3-character ISO codes. The special option "all" retrieves all countries.
 #' @return a xts object
 #' @export
-#' @seealso \url{http://data.worldbank.org/}
+#' @seealso \url{https://data.worldbank.org/}
 #' @examples
 #' \dontrun{
 #' pdfetch_WB("NY.GDP.MKTP.CD", c("BR","MX"))
@@ -488,7 +488,7 @@ pdfetch_BLS <- function(identifiers, from, to) {
 #' @param identifiers a vector of INSEE series codes
 #' @return a xts object
 #' @export
-#' @seealso \url{https://www.insee.fr/}
+#' @seealso \url{https://www.insee.fr/en/accueil}
 #' @examples
 #' \dontrun{
 #' pdfetch_INSEE(c("000810635"))
@@ -602,7 +602,7 @@ pdfetch_ONS <- function(identifiers, dataset) {
 #' GMT, whereas the true time zone may be different. If you wish to use the correct time zone 
 #' you must manually convert it. 
 #' @export
-#' @seealso \url{http://www.eia.gov/}
+#' @seealso \url{https://www.eia.gov/}
 #' @examples
 #' \dontrun{
 #' pdfetch_EIA(c("ELEC.GEN.ALL-AK-99.A","ELEC.GEN.ALL-AK-99.Q"), EIA_KEY)
@@ -665,7 +665,7 @@ pdfetch_EIA <- function(identifiers, api_key) {
 #' @param identifiers a vector of series codes
 #' @return a xts object
 #' @export
-#' @seealso \url{https://www.bundesbank.de/Navigation/EN/Statistics/Time_series_databases/time_series_databases.html}
+#' @seealso \url{https://www.bundesbank.de/en/statistics/time-series-databases}
 #' @examples
 #' \dontrun{
 #' pdfetch_BUNDESBANK(c("BBNZ1.Q.DE.Y.H.0000.A","BBK01.BJ9069"))

@@ -12,7 +12,9 @@ pdfetch_EIA(identifiers, api_key)
 \item{api_key}{EIA API key}
 }
 \value{
-a xts object
+a xts object. Note that for hourly series the time zone will always be set to 
+GMT, whereas the true time zone may be different. If you wish to use the correct time zone 
+you must manually convert it.
 }
 \description{
 Fetch data from the US Energy Information Administration
@@ -23,5 +25,5 @@ pdfetch_EIA(c("ELEC.GEN.ALL-AK-99.A","ELEC.GEN.ALL-AK-99.Q"), EIA_KEY)
 }
 }
 \seealso{
-\url{http://www.eia.gov/}
+\url{https://www.eia.gov/}
 }

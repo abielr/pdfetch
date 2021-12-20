@@ -20,7 +20,7 @@ a xts object
 }
 \description{
 Eurostat stores its statistics in data cubes, which can be browsed at
-\url{http://ec.europa.eu/eurostat/data/database}. To access data, specify the name of a data cube and optionally filter it based on its dimensions.
+\url{https://ec.europa.eu/eurostat/data/database}. To access data, specify the name of a data cube and optionally filter it based on its dimensions.
 }
 \examples{
 \dontrun{

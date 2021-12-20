@@ -4,4 +4,5 @@
 #' @docType package
 #' @name pdfetch
 #' @aliases pdfetch pdfetch-package
+#' @description Download economic and financial time series from public sources
 NULL
