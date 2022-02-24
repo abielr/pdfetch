@@ -614,7 +614,7 @@ pdfetch_EIA <- function(identifiers, api_key) {
   
   for (i in 1:length(identifiers)) {
     id <- identifiers[i]
-    url <- paste0("http://api.eia.gov/series/?series_id=",id,"&api_key=",api_key)
+    url <- paste0("https://api.eia.gov/series/?series_id=",id,"&api_key=",api_key)
     req <- GET(url)
     res <- fromJSON(content(req, as="text", encoding="utf-8"))
     
