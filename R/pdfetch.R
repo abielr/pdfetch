@@ -15,11 +15,11 @@
 #' pdfetch_YAHOO(c("^gspc","^ixic"))
 #' pdfetch_YAHOO(c("^gspc","^ixic"), "adjclose")
 #' }
-pdfetch_YAHOO <- function(identifiers, 
-                          fields=c("open","high","low","close","adjclose","volume"),
-                          from=as.Date("2007-01-01"),
-                          to=Sys.Date(),
-                          interval="1d") {
+pdfetch_YAHOO <- function(identifiers,
+                           fields=c("open","high","low","close","adjclose","volume"),
+                           from=as.Date("2007-01-01"),
+                           to=Sys.Date(),
+                           interval="1d") {
   
   valid.fields <- c("open","high","low","close","adjclose","volume")
   interval <- match.arg(interval, c("1d","1wk","1mo"))
@@ -39,6 +39,7 @@ pdfetch_YAHOO <- function(identifiers,
   to <- as.numeric(as.POSIXct(to))
   
   # The following borrows from quantmod, thank you to Joshua Ulrich.
+  
   if (is.null(.pdenv$handle)) {
     h <- list()
     
@@ -57,9 +58,6 @@ pdfetch_YAHOO <- function(identifiers,
           break;
         Sys.sleep(0.1)
       }
-      
-      if (NROW(curl::handle_cookies(h)) == 0)
-        stop("Could not establish session after 5 attempts.")
       
       return(h)
     }
@@ -88,17 +86,17 @@ pdfetch_YAHOO <- function(identifiers,
       next
     }
     fr <- utils::read.csv(text=rawToChar(resp$content), na.strings="null")
-
+    
     dates <- as.Date(fr$Date)
     fr <- fr[,-1]
     fr <- fr[,match(fields, valid.fields), drop=F]
-
+    
     if (length(fields)==1)
       colnames(fr) <- identifiers[i]
     else
       colnames(fr) <- paste(identifiers[i], fields, sep=".")
-
-    x <- xts(fr, dates)
+    
+    x <- xts::xts(fr, dates)
     results[[identifiers[i]]] <- x
   }
   
@@ -106,7 +104,7 @@ pdfetch_YAHOO <- function(identifiers,
     return(NULL)
   
   storenames <- sapply(results, names)
-  results <- do.call(merge.xts, results)
+  results <- do.call(xts::merge.xts, results)
   colnames(results) <- storenames
   results
 }

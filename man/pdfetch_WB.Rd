@@ -9,7 +9,7 @@ pdfetch_WB(indicators, countries = "all")
 \arguments{
 \item{indicators}{a vector of World Bank indicators}
 
-\item{countries}{a vector of countrie identifiers, which can be 2- or
+\item{countries}{a vector of country identifiers, which can be 2- or
 3-character ISO codes. The special option "all" retrieves all countries.}
 }
 \value{

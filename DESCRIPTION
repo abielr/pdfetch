@@ -12,8 +12,8 @@ Imports:
     stringr
 Type: Package
 Title: Fetch Economic and Financial Time Series Data from Public Sources
-Version: 0.2.5
-Date: 2021-12-19
+Version: 0.2.7
+Date: 2022-05-21
 Author: Abiel Reinhart <abielr@gmail.com>
 Maintainer: Abiel Reinhart <abielr@gmail.com>
 Description: Download economic and financial time series from public sources, 
