@@ -1,6 +1,8 @@
 #' A package for downloading economic and financial time series from public sources.
 #' 
-#' @import zoo xts httr XML lubridate jsonlite reshape2
+#' @import zoo httr XML lubridate jsonlite dplyr
+#' @importFrom tidyr pivot_wider
+#' @importFrom xts xts merge.xts
 #' @docType package
 #' @name pdfetch
 #' @aliases pdfetch pdfetch-package

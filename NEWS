@@ -1,5 +1,9 @@
 Version 0.2.7
 --------------------------------------
+* Fixed Eurostat functions, which had stopped returning data
+
+Version 0.2.7
+--------------------------------------
 * Fix to pdfetch_YAHOO, which was failing to retrieve data (thanks to Freddy Villabona)
 
 Version 0.2.6

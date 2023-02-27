@@ -200,11 +200,9 @@ pdfetch_ECB <- function(identifiers) {
 
 # Download Eurostat DSD file
 pdfetch_EUROSTAT_GETDSD <- function(flowRef) {
-  url <- paste0("http://ec.europa.eu/eurostat/SDMX/diss-web/rest/datastructure/ESTAT/DSD_", flowRef)
+  url <- paste0("https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/datastructure/ESTAT/", flowRef)
   req <- GET(url, add_headers(useragent="RCurl"))
-  doc <- xmlInternalTreeParse(content(req, as="text", encoding="utf-8"))
-  
-  doc
+  xmlInternalTreeParse(content(req, as="text", encoding="utf-8"))
 }
 
 #' Fetch description for a Eurostat dataset
@@ -215,23 +213,29 @@ pdfetch_EUROSTAT_GETDSD <- function(flowRef) {
 #' pdfetch_EUROSTAT_DSD("namq_gdp_c")
 #' }
 pdfetch_EUROSTAT_DSD <- function(flowRef) {
+  results <- NULL
   doc <- pdfetch_EUROSTAT_GETDSD(flowRef)
-  concepts <- setdiff(unlist(getNodeSet(doc, "//str:Dimension/@id")), c("OBS_VALUE","OBS_STATUS","OBS_FLAG"))
-  for (concept in concepts) {
-    codelist_id <- unclass(getNodeSet(doc, paste0("//str:Dimension[@id='",concept,"']//str:Enumeration/Ref/@id"))[[1]])
-    codes <- unlist(getNodeSet(doc, paste0("//str:Codelist[@id='",codelist_id,"']/str:Code/@id")))
-    descriptions <- unlist(getNodeSet(doc, paste0("//str:Codelist[@id='",codelist_id,"']/str:Code/com:Name/text()")))
-    
-    max.code.length <- max(sapply(codes, nchar))
-    
-    print("")
-    print(paste(rep("=", 50), collapse=""))
-    print(concept)
-    print(paste(rep("=", 50), collapse=""))
-    for (j in 1:length(codes)) {
-      print(sprintf(paste0("%-",max.code.length+5,"s %s"), codes[j], xmlValue(descriptions[[j]])))
-    }
+  concepts <- setdiff(unlist(getNodeSet(doc, "//s:Dimension/@id")), c("OBS_VALUE","OBS_STATUS","OBS_FLAG"))
+  
+  url <- paste0("https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/contentconstraint/ESTAT/", flowRef)
+  req <- GET(url, add_headers(useragent="RCurl"))
+  doc_constraint <- xmlInternalTreeParse(content(req, as="text", encoding="utf-8"))
+  constraints <- NULL
+  for (node in getNodeSet(doc_constraint, "//c:KeyValue")) {
+    id <- as.character(xmlAttrs(node, "id"))
+    constraints <- rbind(constraints, data.frame(concept=id, code=sapply(getNodeSet(doc_constraint, paste0("//c:KeyValue[@id='",id,"']/c:Value/text()")), xmlValue)))
   }
+  
+  for (concept in concepts) {
+    dimension <- as.character(unclass(getNodeSet(doc, paste0("//s:Dimension[@id='",concept,"']//s:Enumeration/Ref/@id"))[[1]]))
+    doc_code <- xmlInternalTreeParse(content(GET(paste0("https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/codelist/ESTAT/", dimension)), as="text", encoding="utf-8"))
+    codes <- unlist(getNodeSet(doc_code, "//s:Code/@id"))
+    descriptions <- sapply(unlist(getNodeSet(doc_code, "//s:Code/c:Name[@xml:lang='en']/text()")), xmlValue)
+    results <- rbind(results, data.frame(concept=concept, dimension=dimension, code=codes, description=descriptions))
+  }
+  results <- merge(results, constraints, by=c("concept","code"))
+  results <- subset(results, select = -c(concept))
+  results[, c("dimension","code","description")]
 }
 
 #' Fetch data from Eurostat
@@ -253,7 +257,8 @@ pdfetch_EUROSTAT_DSD <- function(flowRef) {
 pdfetch_EUROSTAT <- function(flowRef, from, to, ...) {
   arguments <- list(...)
   doc <- pdfetch_EUROSTAT_GETDSD(flowRef)
-  concepts <- setdiff(unlist(getNodeSet(doc, "//str:Dimension/@id")), c("OBS_VALUE","OBS_STATUS","OBS_FLAG"))
+  concepts <- setdiff(unlist(getNodeSet(doc, "//s:Dimension//s:Enumeration/Ref/@id")), c("OBS_VALUE","OBS_STATUS","OBS_FLAG"))
+  concepts_lower <- as.vector(unlist(getNodeSet(doc, "//s:Dimension/@id")))
   
   key <- paste(sapply(concepts, function(concept) {
     if (concept %in% names(arguments)) {
@@ -268,66 +273,37 @@ pdfetch_EUROSTAT <- function(flowRef, from, to, ...) {
   if (!missing(to))
     to <- as.Date(to)
   
+  baseurl <- 'https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/data/'
   if (!missing(from) && !missing(to))
-    url <- paste0("http://ec.europa.eu/eurostat/SDMX/diss-web/rest/data/",flowRef,"/",key,"/?startPeriod=",from,"&endPeriod=",to)
+    url <- paste0(baseurl,flowRef,"/",key,"/?format=SDMX-CSV&startPeriod=",from,"&endPeriod=",to)
   else if (!missing(from))
-    url <- paste0("http://ec.europa.eu/eurostat/SDMX/diss-web/rest/data/",flowRef,"/",key,"/?startPeriod=",from)
+    url <- paste0(baseurl,flowRef,"/",key,"/?format=SDMX-CSV&startPeriod=",from)
   else if (!missing(to))
-    url <- paste0("http://ec.europa.eu/eurostat/SDMX/diss-web/rest/data/",flowRef,"/",key,"/?endPeriod=",to)
+    url <- paste0(baseurl,flowRef,"/",key,"/?format=SDMX-CSV&endPeriod=",to)
   else
-    url <- paste0("http://ec.europa.eu/eurostat/SDMX/diss-web/rest/data/",flowRef,"/",key)
+    url <- paste0(baseurl,flowRef,"/",key,"?format=SDMX-CSV")
   
   req <- GET(url, add_headers(useragent="RCurl"))
-  doc <- xmlInternalTreeParse(content(req, as="text", encoding="utf-8"))
-  
-  results <- list()
-  seriesSet <- getNodeSet(doc, "//generic:Series")
-  
-  if (length(seriesSet) == 0) {
+  doc <- readr::read_csv(content(req, as="text", encoding="utf-8"), show_col_types = FALSE)
+  if (nrow(doc) == 0) {
     warning("No series found")
     return(NULL)
   }
-
-  for (i in 1:length(seriesSet)) {
-    series <- seriesSet[[i]]
-    
-    idvalues <- list()
-    for (node in getNodeSet(series, "generic:SeriesKey/generic:Value", "generic"))
-      idvalues[[xmlGetAttr(node, "id")]] <- xmlGetAttr(node, "value")
-    id <- paste(sapply(concepts, function(concept) idvalues[[concept]]), collapse=".")
-    
-    freq <- xmlGetAttr(getNodeSet(series, "generic:SeriesKey/generic:Value[@id='FREQ']", "generic")[[1]], "value")
-    
-    if (freq == "A") {
-      dates <- as.Date(ISOdate(as.numeric(unlist(getNodeSet(series, ".//generic:ObsDimension/@value", "generic"))),12,31))
-    
-    } else if (freq == "Q") {
-      dates <- as.Date(as.yearqtr(
-        sapply(
-          unlist(getNodeSet(series, ".//generic:ObsDimension/@value", "generic")),
-          function(x) paste(substr(x, 1, 4), substr(x, 7, 8), sep="-")
-        )
-      ))
-      dates <- quarter_end(dates)
-    } else if (freq == "M") {
-      dates <- as.Date(as.yearmon(unlist(getNodeSet(series, ".//generic:ObsDimension/@value", "generic")), format="%Y-%m"))
-      dates <- month_end(dates)
-    } else if (freq == "D") {
-      dates <- as.Date(unlist(getNodeSet(series, ".//generic:ObsDimension/@value", "generic")))
-    } else {
-      print(unlist(getNodeSet(series, ".//generic:ObsDimension/@value", "generic")))
-      stop("Unsupported frequency")
-    }
-    
-    values <- as.numeric(getNodeSet(series, ".//generic:ObsValue/@value", "generic"))
-    
-    x <- xts(values, dates)
-    dim(x) <- c(nrow(x),1)
-    colnames(x) <- id
-    results[[i]] <- x
-  }
   
-  na.trim(do.call(merge.xts, results), is.na="all")
+  doc$ID_COLUMN <- apply(doc[, concepts_lower], 1, paste, collapse=".")
+  doc <- doc %>% 
+    select(c("freq","ID_COLUMN","TIME_PERIOD","OBS_VALUE")) %>% 
+    tidyr::pivot_wider(names_from="ID_COLUMN", values_from="OBS_VALUE") %>% 
+    mutate(
+      date=case_when(
+        freq == 'A' ~ as.Date(ISOdate(TIME_PERIOD,12,31)),
+        freq == 'Q' ~ quarter_end(as.Date(lubridate::parse_date_time2(TIME_PERIOD, orders="Y-q"))),
+        freq == 'M' ~ month_end(as.Date(lubridate::parse_date_time2(TIME_PERIOD, orders="Y-m"))),
+        TRUE ~ as.Date(TIME_PERIOD, format="%Y-%m-%d")
+      )
+    )
+
+  na.trim(xts(doc %>% select(-c("freq","TIME_PERIOD","date")), doc$date), is.na="all")
 }
 
 #' Fetch data from World Bank
@@ -358,7 +334,7 @@ pdfetch_WB <- function(indicators, countries="all") {
   results <- data.frame(indicator=paste(x$indicator$id, x$country$id, sep="."),
                   value=as.numeric(x$value),
                   date=as.Date(ISOdate(as.numeric(x$date), 12, 31))) # This dating won't always work, need to detect frequency
-  results <- dcast(results, date ~ indicator)
+  results <- tidyr::pivot_wider(results, names_from = "indicator", values_from = "value")
   results <- na.trim(xts(subset(results, select=-date), results$date), is.na="all")
   results
 }
