@@ -1,4 +1,8 @@
-Version 0.2.7
+Version 0.2.9
+--------------------------------------
+* Fixed Yahoo functions, which had stopped returning data, by borrowing new code from the quantmod package, thank you to Joshua Ulrich
+
+Version 0.2.8
 --------------------------------------
 * Fixed Eurostat functions, which had stopped returning data
 

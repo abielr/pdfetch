@@ -38,49 +38,60 @@ pdfetch_YAHOO <- function(identifiers,
   from <- as.numeric(as.POSIXct(from))
   to <- as.numeric(as.POSIXct(to))
   
-  # The following borrows from quantmod, thank you to Joshua Ulrich.
+  # The following .yahooSession function is directly copied from quantmod, thank you to Joshua Ulrich.
   
-  if (is.null(.pdenv$handle)) {
-    h <- list()
+  .yahooSession <- function(is.retry = FALSE) {
+    cache.name <- "_yahoo_curl_session_"
+    ses <- get0(cache.name, .pdenv) # get cached session
     
-    # establish session
-    new.session <- function() {
-      tmp <- tempfile()
-      on.exit(unlink(tmp))
-      
-      for (i in 1:5) {
-        h <- curl::new_handle()
-        # random query to avoid cache
-        ru <- paste(sample(c(letters, 0:9), 4), collapse = "")
-        cu <- paste0("https://finance.yahoo.com?", ru)
-        curl::curl_download(cu, tmp, handle = h)
-        if (NROW(curl::handle_cookies(h)) > 0)
-          break;
-        Sys.sleep(0.1)
-      }
-      
-      return(h)
+    if (is.null(ses) || is.retry) {
+      ses <- list()
+      ses$h <- curl::new_handle()
+      # yahoo finance doesn't seem to set cookies without these headers
+      # and the cookies are needed to get the crumb
+      curl::handle_setheaders(ses$h, 
+                              accept = "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+                              "User-Agent" = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36 Edg/115.0.1901.183")
+      URL <- "https://finance.yahoo.com/"
+      r <- curl::curl_fetch_memory(URL, handle = ses$h)
+      # yahoo redirects to a consent form w/ a single cookie for GDPR:
+      # detecting the redirect seems very brittle as its sensitive to the trailing "/"
+      ses$can.crumb <- ((r$status_code == 200) && (URL == r$url) && (NROW(curl::handle_cookies(ses$h)) > 1))
+      assign(cache.name, ses, .pdenv) # cache session
     }
     
-    h$ch <- new.session()
+    if (ses$can.crumb) {
+      # get a crumb so that downstream callers don't have to handle invalid sessions.
+      # this is a network hop, but very lightweight payload
+      n <- if (unclass(Sys.time()) %% 1L >= 0.5) 1L else 2L
+      query.srv <- paste0("https://query", n, ".finance.yahoo.com/v1/test/getcrumb")
+      r <- curl::curl_fetch_memory(query.srv, handle = ses$h)
+      if ((r$status_code == 200) && (length(r$content) > 0)) {
+        ses$crumb <- rawToChar(r$content)
+      } else {
+        # we were unable to get a crumb
+        if (is.retry) {
+          # we already did a retry and still couldn't get a crumb with a new session
+          stop("unable to get yahoo crumb")
+        } else {
+          # we tried to re-use a session but couldn't get a crumb
+          # try to get a crumb using a new session
+          ses <- .yahooSession(TRUE)
+        }
+      }
+    }
     
-    n <- if (unclass(Sys.time()) %% 1L >= 0.5) 1L else 2L
-    query.srv <- paste0("https://query", n, ".finance.yahoo.com/",
-                        "v1/test/getcrumb")
-    cres <- curl::curl_fetch_memory(query.srv, handle = h$ch)
-    
-    h$crumb <- rawToChar(cres$content)
-    .pdenv$handle <- h
+    return(ses)
   }
   
-  h <- .pdenv$handle
+  session <- .yahooSession()
   
   for (i in 1:length(identifiers)) {
     url <- paste0("https://query1.finance.yahoo.com/v7/finance/download/",identifiers[i],
                   "?period1=",from,"&period2=",to,"&interval=",interval,"&events=history&crumb=",
-                  h$crumb)
+                  session$crumb)
     
-    resp <- curl::curl_fetch_memory(url, handle=h$ch)
+    resp <- curl::curl_fetch_memory(url, handle=session$h)
     if (resp$status != 200) {
       warning(paste0("Could not find series '",identifiers[i],"'"))
       next
