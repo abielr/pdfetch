@@ -133,27 +133,25 @@ pdfetch_YAHOO <- function(identifiers,
 pdfetch_FRED <- function(identifiers) {  
   results <- list()
   for (i in 1:length(identifiers)) {
-    
-    url <- paste0("https://research.stlouisfed.org/fred2/series/",identifiers[i],"/downloaddata/",identifiers[i],".txt")
+
+    url <- paste0("https://fred.stlouisfed.org/graph/api/series/?id=",identifiers[i])
     req <- GET(url)
-    fileLines <- readLines(textConnection(content(req, encoding="utf-8")))
-    freq <- sub(",", "", strsplit(fileLines[6], " +")[[1]][2])
-    skip <- grep("DATE", fileLines)[1]
-    fr <- utils::read.fwf(textConnection(content(req, encoding="utf-8")), skip=skip, widths=c(10,20), na.strings=".", colClasses=c("character","numeric"))
-    
-    dates <- as.Date(fr[,1], origin="1970-01-01")
+    freq <- content(req)$chart_series[[1]]$frequency
+
+    url <- paste0("https://fred.stlouisfed.org/graph/fredgraph.csv?id=",identifiers[i])
+    req <- GET(url)
+    df <- content(req, col_types=readr::cols())
 
     if (freq == "Annual")
-      dates <- year_end(dates)
+      df$DATE <- year_end(df$DATE)
     else if (freq == "Semiannual")
-      dates <- halfyear_end(dates)
+      df$DATE <- halfyear_end(df$DATE)
     else if (freq == "Quarterly")
-      dates <- quarter_end(dates)
+      df$DATE <- quarter_end(df$DATE)
     else if (freq == "Monthly")
-      dates <- month_end(dates)
+      df$DATE <- month_end(df$DATE)
     
-    ix <- !is.na(dates)
-    x <- xts(as.matrix(fr[ix,2]), dates[ix])
+    x <- xts(as.matrix(suppressWarnings(as.numeric(pull(df, 2)))), df$DATE)
     dim(x) <- c(nrow(x),1)
     colnames(x) <- identifiers[i]
     results[[identifiers[i]]] <- x
