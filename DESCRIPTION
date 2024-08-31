@@ -15,8 +15,8 @@ Imports:
     readr
 Type: Package
 Title: Fetch Economic and Financial Time Series Data from Public Sources
-Version: 0.3.0
-Date: 2024-08-17
+Version: 0.3.1
+Date: 2024-08-31
 Author: Abiel Reinhart <abielr@gmail.com>
 Maintainer: Abiel Reinhart <abielr@gmail.com>
 Description: Download economic and financial time series from public sources, 

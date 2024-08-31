@@ -331,9 +331,8 @@ pdfetch_WB <- function(indicators, countries="all") {
   countries <- paste(countries, collapse=";")
   indicators <- paste(indicators, collapse=";")
   
-  query <- paste0("http://api.worldbank.org/countries/",countries,"/indicators/",indicators,"?format=json&per_page=1000")
-  req <- GET(query)
-  x <- fromJSON(content(req, as="text"))[[2]]
+  query <- paste0("https://api.worldbank.org/v2/country/",countries,"/indicator/",indicators,"?format=json&per_page=1000")
+  x <- fromJSON(query)[[2]]
   
   if (!inherits(x, "data.frame")) {
     warning("No series found")

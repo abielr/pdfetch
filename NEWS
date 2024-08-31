@@ -1,3 +1,7 @@
+Version 0.3.1
+--------------------------------------
+* Updated pdfetch_WB function to use the World Bank v2 API
+
 Version 0.3.0
 --------------------------------------
 * Fixed pdfetch_FRED function, which was failing to retrieve data
