@@ -9,7 +9,7 @@ pdfetch_YAHOO(
   fields = c("open", "high", "low", "close", "adjclose", "volume"),
   from = as.Date("2007-01-01"),
   to = Sys.Date(),
-  interval = "1d"
+  interval = c("1d", "1wk", "1mo", "daily", "weekly", "monthly")
 )
 }
 \arguments{

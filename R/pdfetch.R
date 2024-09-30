@@ -19,105 +19,28 @@ pdfetch_YAHOO <- function(identifiers,
                            fields=c("open","high","low","close","adjclose","volume"),
                            from=as.Date("2007-01-01"),
                            to=Sys.Date(),
-                           interval="1d") {
+                           interval=c("1d","1wk","1mo","daily","weekly","monthly")) {
   
-  valid.fields <- c("open","high","low","close","adjclose","volume")
-  interval <- match.arg(interval, c("1d","1wk","1mo"))
+  valid.fields <- c("open","high","low","close","volume","adjclose")
+  interval <- match.arg(interval)
+  if (interval %in% c("1d", "1wk", "1mo"))
+    interval <- list("1d"="daily", "1wk"="weekly", "1mo"="monthly")[[interval]]
   
-  if (!missing(from))
-    from <- as.Date(from)
-  if (!missing(to))
-    to <- as.Date(to)
-  
-  if (missing(fields))
-    fields <- valid.fields
   if (length(setdiff(fields,valid.fields)) > 0)
     stop(paste0("Invalid fields, must be one of ", valid.fields))
   
   results <- list()
-  from <- as.numeric(as.POSIXct(from))
-  to <- as.numeric(as.POSIXct(to))
   
-  # The following .yahooSession function is directly copied from quantmod, thank you to Joshua Ulrich.
-  
-  .yahooSession <- function(is.retry = FALSE) {
-    cache.name <- "_yahoo_curl_session_"
-    ses <- get0(cache.name, .pdenv) # get cached session
-    
-    if (is.null(ses) || is.retry) {
-      ses <- list()
-      ses$h <- curl::new_handle()
-      # yahoo finance doesn't seem to set cookies without these headers
-      # and the cookies are needed to get the crumb
-      curl::handle_setheaders(ses$h, 
-                              accept = "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-                              "User-Agent" = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36 Edg/115.0.1901.183")
-      URL <- "https://finance.yahoo.com/"
-      r <- curl::curl_fetch_memory(URL, handle = ses$h)
-      # yahoo redirects to a consent form w/ a single cookie for GDPR:
-      # detecting the redirect seems very brittle as its sensitive to the trailing "/"
-      ses$can.crumb <- ((r$status_code == 200) && (URL == r$url) && (NROW(curl::handle_cookies(ses$h)) > 1))
-      assign(cache.name, ses, .pdenv) # cache session
+  for (identifier in identifiers) {
+    data <- quantmod::getSymbols(identifier, src="yahoo", auto.assign=FALSE, from=from, to=to, periodicity=interval)
+    names(data) <- paste(identifier, valid.fields, sep=".")
+    data <- data[, paste(identifier, fields, sep=".")]
+    if (length(fields) == 1) {
+      names(data) <- identifier
     }
-    
-    if (ses$can.crumb) {
-      # get a crumb so that downstream callers don't have to handle invalid sessions.
-      # this is a network hop, but very lightweight payload
-      n <- if (unclass(Sys.time()) %% 1L >= 0.5) 1L else 2L
-      query.srv <- paste0("https://query", n, ".finance.yahoo.com/v1/test/getcrumb")
-      r <- curl::curl_fetch_memory(query.srv, handle = ses$h)
-      if ((r$status_code == 200) && (length(r$content) > 0)) {
-        ses$crumb <- rawToChar(r$content)
-      } else {
-        # we were unable to get a crumb
-        if (is.retry) {
-          # we already did a retry and still couldn't get a crumb with a new session
-          stop("unable to get yahoo crumb")
-        } else {
-          # we tried to re-use a session but couldn't get a crumb
-          # try to get a crumb using a new session
-          ses <- .yahooSession(TRUE)
-        }
-      }
-    }
-    
-    return(ses)
+    results[[identifier]] <- data
   }
-  
-  session <- .yahooSession()
-  
-  for (i in 1:length(identifiers)) {
-    url <- paste0("https://query1.finance.yahoo.com/v7/finance/download/",identifiers[i],
-                  "?period1=",from,"&period2=",to,"&interval=",interval,"&events=history&crumb=",
-                  session$crumb)
-    
-    resp <- curl::curl_fetch_memory(url, handle=session$h)
-    if (resp$status != 200) {
-      warning(paste0("Could not find series '",identifiers[i],"'"))
-      next
-    }
-    fr <- utils::read.csv(text=rawToChar(resp$content), na.strings="null")
-    
-    dates <- as.Date(fr$Date)
-    fr <- fr[,-1]
-    fr <- fr[,match(fields, valid.fields), drop=F]
-    
-    if (length(fields)==1)
-      colnames(fr) <- identifiers[i]
-    else
-      colnames(fr) <- paste(identifiers[i], fields, sep=".")
-    
-    x <- xts::xts(fr, dates)
-    results[[identifiers[i]]] <- x
-  }
-  
-  if (length(results) == 0)
-    return(NULL)
-  
-  storenames <- sapply(results, names)
-  results <- do.call(xts::merge.xts, results)
-  colnames(results) <- storenames
-  results
+  return(do.call(xts::merge.xts, results))
 }
 
 #' Fetch data from St Louis Fed's FRED database
@@ -389,7 +312,6 @@ pdfetch_BOE <- function(identifiers, from, to=Sys.Date()) {
 #'   that is beyond the last available data point in the series.
 #' @return a xts object
 #' @export
-#' @seealso \url{https://www.bls.gov/data/}
 #' @examples
 #' \dontrun{
 #' pdfetch_BLS(c("EIUIR","EIUIR100"), 2005, 2010)

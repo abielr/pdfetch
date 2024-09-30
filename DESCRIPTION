@@ -6,19 +6,21 @@ Imports:
     XML,
     lubridate,
     jsonlite,
-    curl,
     xml2,
     stringr,
     magrittr,
     dplyr,
     tidyr,
-    readr
+    readr,
+    quantmod
 Type: Package
 Title: Fetch Economic and Financial Time Series Data from Public Sources
-Version: 0.3.1
-Date: 2024-08-31
-Author: Abiel Reinhart <abielr@gmail.com>
-Maintainer: Abiel Reinhart <abielr@gmail.com>
+Version: 0.3.2
+Date: 2024-09-30
+Authors@R: person(given = "Abiel",
+                  family = "Reinhart",
+                  role = c("aut", "cre"),
+                  email = "abielr@gmail.com")
 Description: Download economic and financial time series from public sources, 
   including the St Louis Fed's FRED system, Yahoo Finance, the US Bureau of Labor Statistics, 
   the US Energy Information Administration, the World Bank, Eurostat, the European Central Bank,
