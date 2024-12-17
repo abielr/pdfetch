@@ -63,18 +63,18 @@ pdfetch_FRED <- function(identifiers) {
 
     url <- paste0("https://fred.stlouisfed.org/graph/fredgraph.csv?id=",identifiers[i])
     req <- GET(url)
-    df <- content(req, col_types=readr::cols())
+    df <- readr::read_csv(content(req, as="text", encoding="utf-8"), col_types = readr::cols())
 
     if (freq == "Annual")
-      df$DATE <- year_end(df$DATE)
+      df$observation_date <- year_end(df$observation_date)
     else if (freq == "Semiannual")
-      df$DATE <- halfyear_end(df$DATE)
+      df$observation_date <- halfyear_end(df$observation_date)
     else if (freq == "Quarterly")
-      df$DATE <- quarter_end(df$DATE)
+      df$observation_date <- quarter_end(df$observation_date)
     else if (freq == "Monthly")
-      df$DATE <- month_end(df$DATE)
+      df$observation_date <- month_end(df$observation_date)
     
-    x <- xts(as.matrix(suppressWarnings(as.numeric(pull(df, 2)))), df$DATE)
+    x <- xts(as.matrix(suppressWarnings(as.numeric(pull(df, 2)))), df$observation_date)
     dim(x) <- c(nrow(x),1)
     colnames(x) <- identifiers[i]
     results[[identifiers[i]]] <- x
@@ -465,13 +465,14 @@ pdfetch_ONS <- function(identifiers, dataset) {
   results <- list()
   
   for (id in identifiers) {
-    url <- paste0("https://api.ons.gov.uk/dataset/",dataset,"/timeseries/",id,"/data")
+    url <- paste0("https://api.beta.ons.gov.uk/v1/datasets/",dataset,"/editions/time-series/versions/1/observations?time=*&aggregate=",id)
 
     raw <- content(GET(url))
     if (is.null(raw)) {
       warning(paste0('Series ', id, ' in dataset ', dataset, ' not found.'))
       next
     }
+    print(raw)
     
     if (length(raw$months) > 0) {
       month <- sapply(raw$months, function(x) match(x$month, c("January","February","March","April","May","June","July","August","September","October","November","December")))

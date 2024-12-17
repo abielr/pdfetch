@@ -1,3 +1,7 @@
+Version 0.3.3
+--------------------------------------
+* Fixed pdfetch_FRED function which was not returning data
+
 Version 0.3.2
 --------------------------------------
 * Updated pdfetch_YAHOO function to leverage the quantmod package. 

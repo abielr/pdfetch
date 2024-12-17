@@ -15,8 +15,8 @@ Imports:
     quantmod
 Type: Package
 Title: Fetch Economic and Financial Time Series Data from Public Sources
-Version: 0.3.2
-Date: 2024-09-30
+Version: 0.3.3
+Date: 2024-12-16
 Authors@R: person(given = "Abiel",
                   family = "Reinhart",
                   role = c("aut", "cre"),
